@@ -63,7 +63,10 @@ class CashLedgerTest extends TestCase
             ->assertSee('paymentChart', false)
             ->assertSee('chart.umd.min.js', false)
             ->assertDontSee('Historique commun des opérations')
-            ->assertDontSee('data-bs-target="#operationModal"', false);
+            ->assertSee('Nouvelle opération')
+            ->assertSee('data-bs-target="#operationModal"', false)
+            ->assertSee('Approvisionnement')
+            ->assertSee('Dépense');
     }
     public function test_entry_flow_only_includes_funding(): void {
         $user = $this->operator();
@@ -74,7 +77,7 @@ class CashLedgerTest extends TestCase
         $this->actingAs($user)->get(route('entries.index'))
             ->assertOk()
             ->assertSee('Gestion des entrées')
-            ->assertSee('Nouvelle entrée')
+            ->assertSee('Nouvel approvisionnement')
             ->assertSee('Approvisionnement visible')
             ->assertDontSee('Dépense masquée')
             ->assertSee('75,00')
@@ -90,7 +93,7 @@ class CashLedgerTest extends TestCase
         $this->actingAs($user)->get(route('expenses.index'))
             ->assertOk()
             ->assertSee('Gestion des sorties')
-            ->assertSee('Nouvelle sortie')
+            ->assertSee('Nouvelle dépense')
             ->assertSee('Dépense visible')
             ->assertDontSee('Approvisionnement masqué')
             ->assertDontSee('cashChart', false);
@@ -104,5 +107,18 @@ class CashLedgerTest extends TestCase
         }
 
         $this->assertDatabaseCount('transactions', 0);
+    }
+
+    public function test_user_cannot_spend_another_users_funding(): void
+    {
+        $fundedUser = $this->operator();
+        $otherUser = $this->operator();
+        app(CashLedger::class)->record($this->data('approvisionnement', '500'), $fundedUser);
+
+        $this->actingAs($otherUser)->post('/operations', $this->data('depense', '1'))
+            ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseCount('transactions', 1);
+        $this->assertSame(50000, CashAccount::findOrFail(1)->balance_minor);
     }
 }

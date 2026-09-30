@@ -71,6 +71,8 @@ class CashController
             return ['label' => $date->format('d/m'), 'in' => (int) (clone $query)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor') / 100, 'out' => (int) (clone $query)->whereIn('type', ['depense', 'retrait'])->sum('amount_minor') / 100];
         });
         $balance = CashAccount::findOrFail(1)->balance_minor;
+        $personalAvailable = (int) Transaction::where('user_id', $user->id)->whereNull('cancelled_at')->where('type', 'approvisionnement')->sum('amount_minor')
+            - (int) Transaction::where('user_id', $user->id)->whereNull('cancelled_at')->where('type', 'depense')->sum('amount_minor');
         if (!$isGlobalDashboard) {
             $balanceQuery = Transaction::where('user_id', $user->id)->whereNull('cancelled_at');
             $balance = (int) (clone $balanceQuery)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor')
@@ -82,6 +84,7 @@ class CashController
             'page' => $page, 'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
             'totals' => $totals, 'chart' => $chart,
             'typeChart' => $typeChart, 'paymentChart' => $paymentChart,
+            'availableBalance' => max(0, $personalAvailable),
             'todayCount' => $todayQuery->count(),
             'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
         ]);
@@ -93,9 +96,14 @@ class CashController
             'payment_method' => ['required', Rule::in(array_keys(Transaction::METHODS))],
             'description' => 'required|string|max:255', 'justification' => 'nullable|string|max:5000',
             'occurred_on' => 'required|date_format:Y-m-d|before_or_equal:today',
+            'source' => 'nullable|in:dashboard',
         ]);
+        $source = $data['source'] ?? null;
+        unset($data['source']);
         $transaction = $ledger->record($data, $request->user());
-        $destination = $transaction->type === 'approvisionnement' ? 'entries.index' : 'expenses.index';
+        $destination = $source === 'dashboard'
+            ? 'dashboard'
+            : ($transaction->type === 'approvisionnement' ? 'entries.index' : 'expenses.index');
         return redirect()->route($destination)->with('success', 'Opération '.$transaction->reference.' enregistrée.');
     }
     public function cancel(Request $request, Transaction $transaction, CashLedger $ledger) {
