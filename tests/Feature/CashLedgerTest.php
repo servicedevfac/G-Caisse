@@ -39,7 +39,7 @@ class CashLedgerTest extends TestCase
     }
     public function test_guest_is_redirected_to_login(): void { $this->get('/')->assertRedirect('/connexion'); }
     public function test_authenticated_user_can_record(): void {
-        $this->actingAs($this->operator())->post('/operations', $this->data())->assertRedirect(route('dashboard'));
+        $this->actingAs($this->operator())->post('/operations', $this->data())->assertRedirect(route('entries.index'));
         $this->assertDatabaseCount('transactions', 1);
     }
     public function test_invalid_amount_and_future_date_are_rejected(): void {
@@ -62,10 +62,8 @@ class CashLedgerTest extends TestCase
             ->assertSee('typeChart', false)
             ->assertSee('paymentChart', false)
             ->assertSee('chart.umd.min.js', false)
-            ->assertSee('<option value="approvisionnement"', false)
-            ->assertSee('<option value="depense"', false)
-            ->assertDontSee('<option value="recette"', false)
-            ->assertDontSee('<option value="retrait"', false);
+            ->assertDontSee('Historique commun des opérations')
+            ->assertDontSee('data-bs-target="#operationModal"', false);
     }
     public function test_entry_flow_only_includes_funding(): void {
         $user = $this->operator();
@@ -73,12 +71,29 @@ class CashLedgerTest extends TestCase
         $ledger->record([...$this->data('approvisionnement', '75'), 'description' => 'Approvisionnement visible'], $user);
         $ledger->record([...$this->data('depense', '10'), 'description' => 'Dépense masquée'], $user);
 
-        $this->actingAs($user)->get('/?flow=entree')
+        $this->actingAs($user)->get(route('entries.index'))
             ->assertOk()
             ->assertSee('Gestion des entrées')
+            ->assertSee('Nouvelle entrée')
             ->assertSee('Approvisionnement visible')
             ->assertDontSee('Dépense masquée')
-            ->assertSee('75,00');
+            ->assertSee('75,00')
+            ->assertDontSee('cashChart', false);
+    }
+
+    public function test_expense_page_only_includes_expenses(): void {
+        $user = $this->operator();
+        $ledger = app(CashLedger::class);
+        $ledger->record([...$this->data('approvisionnement', '75'), 'description' => 'Approvisionnement masqué'], $user);
+        $ledger->record([...$this->data('depense', '10'), 'description' => 'Dépense visible'], $user);
+
+        $this->actingAs($user)->get(route('expenses.index'))
+            ->assertOk()
+            ->assertSee('Gestion des sorties')
+            ->assertSee('Nouvelle sortie')
+            ->assertSee('Dépense visible')
+            ->assertDontSee('Approvisionnement masqué')
+            ->assertDontSee('cashChart', false);
     }
 
     public function test_removed_operation_types_cannot_be_recorded(): void {

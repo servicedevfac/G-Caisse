@@ -59,12 +59,17 @@ class UserAccessTest extends TestCase
             'occurred_on' => today()->toDateString(),
         ], $creator);
 
-        $this->actingAs($viewer)->get('/')
+        $this->actingAs($viewer)->get(route('history.index'))
             ->assertOk()
             ->assertSee('Paiement du client partagé')
             ->assertSee('Créée par Aïcha Koné')
+            ->assertSee('Historique commun des opérations');
+
+        $this->actingAs($viewer)->get('/')
+            ->assertOk()
             ->assertSee('MES INDICATEURS DE CAISSE')
             ->assertSee('Solde de mes opérations')
+            ->assertDontSee('Paiement du client partagé')
             ->assertSee('<div class="stat-value">0,00', false);
     }
 
@@ -86,14 +91,19 @@ class UserAccessTest extends TestCase
         $this->actingAs($aicha)->get('/')
             ->assertOk()
             ->assertSee('<div class="stat-value">250,00', false)
-            ->assertSee('Apport Moussa')
-            ->assertSee('Créée par Moussa Traoré');
+            ->assertDontSee('Apport Moussa');
 
         $this->actingAs($moussa)->get('/')
             ->assertOk()
             ->assertSee('<div class="stat-value">70,00', false)
+            ->assertDontSee('Apport Aïcha');
+
+        $this->actingAs($moussa)->get(route('history.index'))
+            ->assertOk()
             ->assertSee('Apport Aïcha')
-            ->assertSee('Créée par Aïcha Koné');
+            ->assertSee('Créée par Aïcha Koné')
+            ->assertSee('Apport Moussa')
+            ->assertSee('Créée par Moussa Traoré');
 
         $this->actingAs($admin)->get('/')
             ->assertOk()

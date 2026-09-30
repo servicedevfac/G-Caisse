@@ -3,16 +3,16 @@
     <div class="workspace"><span class="workspace-icon">E</span><div>Mon entreprise<small>Espace de gestion</small></div><span class="ms-auto muted">⌄</span></div>
     <p class="nav-label">ESPACE CAISSE</p>
     <nav aria-label="Navigation principale">
-        <a class="{{ request()->routeIs('dashboard') && !request()->hasAny(['flow', 'type', 'period', 'status', 'q', 'from', 'to']) ? 'active' : '' }}" href="{{ route('dashboard') }}"><span>◫</span> Tableau de bord</a>
-        <details class="nav-group" @if(request()->routeIs('dashboard')) open @endif>
+        <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><span>◫</span> Tableau de bord</a>
+        <details class="nav-group" @if(request()->routeIs('entries.*', 'expenses.*', 'history.*')) open @endif>
             <summary><span>⇄</span> Mouvements de caisse <b>⌄</b></summary>
             <div class="nav-submenu">
-                <a class="{{ request()->routeIs('dashboard') && request('flow') === 'entree' ? 'active' : '' }}" href="{{ route('dashboard', ['flow' => 'entree']) }}">Gestion des entrées</a>
-                <a class="{{ request()->routeIs('dashboard') && request('flow') === 'sortie' ? 'active' : '' }}" href="{{ route('dashboard', ['flow' => 'sortie']) }}">Gestion des sorties</a>
-                <a class="{{ request()->routeIs('dashboard') && !request('flow') && request()->hasAny(['type', 'status', 'q', 'from', 'to']) ? 'active' : '' }}" href="{{ route('dashboard') }}#operations">Historique des mouvements</a>
+                <a class="{{ request()->routeIs('entries.*') ? 'active' : '' }}" href="{{ route('entries.index') }}">Gestion des entrées</a>
+                <a class="{{ request()->routeIs('expenses.*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">Gestion des sorties</a>
+                <a class="{{ request()->routeIs('history.*') ? 'active' : '' }}" href="{{ route('history.index') }}">Historique des mouvements</a>
             </div>
         </details>
-        <a class="{{ request()->routeIs('dashboard') && request('period') ? 'active' : '' }}" href="{{ route('dashboard', ['period' => 'month']) }}"><span>▥</span> Rapports & statistiques</a>
+        <a class="{{ request()->routeIs('history.*') && request('period') ? 'active' : '' }}" href="{{ route('history.index', ['period' => 'month']) }}"><span>▥</span> Rapports & statistiques</a>
         @if(auth()->user()->is_admin)
             <a class="{{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><span>◎</span> Utilisateurs</a>
         @endif

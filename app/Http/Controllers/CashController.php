@@ -27,6 +27,25 @@ class CashController
         return $query;
     }
     public function index(Request $request) {
+        if ($request->filled('flow')) {
+            return redirect()->route($request->flow === 'entree' ? 'entries.index' : 'expenses.index', $request->except('flow'));
+        }
+
+        return $this->renderPage($request, 'dashboard');
+    }
+    public function entries(Request $request) {
+        $request->merge(['flow' => 'entree']);
+        return $this->renderPage($request, 'entries');
+    }
+    public function expenses(Request $request) {
+        $request->merge(['flow' => 'sortie']);
+        return $this->renderPage($request, 'expenses');
+    }
+    public function history(Request $request) {
+        $request->request->remove('flow');
+        return $this->renderPage($request, 'history');
+    }
+    private function renderPage(Request $request, string $page) {
         $user = $request->user();
         $isGlobalDashboard = $user->is_admin;
         $historyQuery = $this->filtered($request);
@@ -60,7 +79,7 @@ class CashController
         $todayQuery = Transaction::whereNull('cancelled_at')->whereDate('occurred_on', today());
         if (!$isGlobalDashboard) $todayQuery->where('user_id', $user->id);
         return view('dashboard', [
-            'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
+            'page' => $page, 'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
             'totals' => $totals, 'chart' => $chart,
             'typeChart' => $typeChart, 'paymentChart' => $paymentChart,
             'todayCount' => $todayQuery->count(),
@@ -76,7 +95,8 @@ class CashController
             'occurred_on' => 'required|date_format:Y-m-d|before_or_equal:today',
         ]);
         $transaction = $ledger->record($data, $request->user());
-        return redirect()->route('dashboard')->with('success', 'Opération '.$transaction->reference.' enregistrée.');
+        $destination = $transaction->type === 'approvisionnement' ? 'entries.index' : 'expenses.index';
+        return redirect()->route($destination)->with('success', 'Opération '.$transaction->reference.' enregistrée.');
     }
     public function cancel(Request $request, Transaction $transaction, CashLedger $ledger) {
         $data = $request->validate(['cancellation_reason' => 'required|string|min:5|max:255']);
