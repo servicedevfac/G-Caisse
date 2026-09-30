@@ -57,7 +57,7 @@ class CashLedgerTest extends TestCase
             ->assertSee('Gestion des sorties')
             ->assertSee('Historique des mouvements')
             ->assertSee('Déconnexion')
-            ->assertSee('Les flux de votre caisse')
+            ->assertSee('Les flux de mes opérations')
             ->assertSee('cashChart', false)
             ->assertSee('typeChart', false)
             ->assertSee('paymentChart', false)

@@ -48,7 +48,44 @@ class UserAccessTest extends TestCase
         $this->actingAs($viewer)->get('/')
             ->assertOk()
             ->assertSee('Paiement du client partagé')
+            ->assertSee('Créée par Aïcha Koné')
+            ->assertSee('MES INDICATEURS DE CAISSE')
+            ->assertSee('Solde de mes opérations')
+            ->assertSee('<div class="stat-value">0,00', false);
+    }
+
+    public function test_each_employee_has_personal_metrics_while_admin_has_global_metrics(): void
+    {
+        $aicha = $this->user(['name' => 'Aïcha Koné']);
+        $moussa = $this->user(['name' => 'Moussa Traoré']);
+        $admin = $this->user(['name' => 'Ben', 'is_admin' => true]);
+        $ledger = app(CashLedger::class);
+        $ledger->record([
+            'request_key' => (string) Str::uuid(), 'type' => 'approvisionnement', 'amount' => '250',
+            'description' => 'Apport Aïcha', 'payment_method' => 'especes', 'occurred_on' => today()->toDateString(),
+        ], $aicha);
+        $ledger->record([
+            'request_key' => (string) Str::uuid(), 'type' => 'approvisionnement', 'amount' => '70',
+            'description' => 'Apport Moussa', 'payment_method' => 'mobile_money', 'occurred_on' => today()->toDateString(),
+        ], $moussa);
+
+        $this->actingAs($aicha)->get('/')
+            ->assertOk()
+            ->assertSee('<div class="stat-value">250,00', false)
+            ->assertSee('Apport Moussa')
+            ->assertSee('Créée par Moussa Traoré');
+
+        $this->actingAs($moussa)->get('/')
+            ->assertOk()
+            ->assertSee('<div class="stat-value">70,00', false)
+            ->assertSee('Apport Aïcha')
             ->assertSee('Créée par Aïcha Koné');
+
+        $this->actingAs($admin)->get('/')
+            ->assertOk()
+            ->assertSee('VUE GLOBALE DE L’ENTREPRISE')
+            ->assertSee('Solde global')
+            ->assertSee('<div class="stat-value">320,00', false);
     }
 
     public function test_admin_can_view_and_block_user_without_delete_action(): void

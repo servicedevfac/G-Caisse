@@ -27,11 +27,16 @@ class CashController
         return $query;
     }
     public function index(Request $request) {
-        $query = $this->filtered($request);
-        $active = (clone $query)->whereNull('cancelled_at');
+        $user = $request->user();
+        $isGlobalDashboard = $user->is_admin;
+        $historyQuery = $this->filtered($request);
+        $metricsQuery = clone $historyQuery;
+        if (!$isGlobalDashboard) $metricsQuery->where('user_id', $user->id);
+        $active = (clone $metricsQuery)->whereNull('cancelled_at');
         $totals = [];
         foreach (array_keys(Transaction::TYPES) as $type) $totals[$type] = (int) (clone $active)->where('type', $type)->sum('amount_minor');
         $allActive = Transaction::query()->whereNull('cancelled_at');
+        if (!$isGlobalDashboard) $allActive->where('user_id', $user->id);
         $typeChart = collect(Transaction::OPERATION_TYPES)->map(fn ($label, $type) => [
             'label' => $label,
             'value' => (int) (clone $allActive)->where('type', $type)->sum('amount_minor') / 100,
@@ -40,17 +45,26 @@ class CashController
             'label' => $label,
             'value' => (int) (clone $allActive)->where('payment_method', $method)->sum('amount_minor') / 100,
         ])->values();
-        $chart = collect(range(6, 0))->map(function ($offset) {
+        $chart = collect(range(6, 0))->map(function ($offset) use ($isGlobalDashboard, $user) {
             $date = today()->subDays($offset);
             $query = Transaction::whereNull('cancelled_at')->whereDate('occurred_on', $date);
+            if (!$isGlobalDashboard) $query->where('user_id', $user->id);
             return ['label' => $date->format('d/m'), 'in' => (int) (clone $query)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor') / 100, 'out' => (int) (clone $query)->whereIn('type', ['depense', 'retrait'])->sum('amount_minor') / 100];
         });
+        $balance = CashAccount::findOrFail(1)->balance_minor;
+        if (!$isGlobalDashboard) {
+            $balanceQuery = Transaction::where('user_id', $user->id)->whereNull('cancelled_at');
+            $balance = (int) (clone $balanceQuery)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor')
+                - (int) (clone $balanceQuery)->whereIn('type', ['depense', 'retrait'])->sum('amount_minor');
+        }
+        $todayQuery = Transaction::whereNull('cancelled_at')->whereDate('occurred_on', today());
+        if (!$isGlobalDashboard) $todayQuery->where('user_id', $user->id);
         return view('dashboard', [
-            'balance' => CashAccount::findOrFail(1)->balance_minor,
+            'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
             'totals' => $totals, 'chart' => $chart,
             'typeChart' => $typeChart, 'paymentChart' => $paymentChart,
-            'todayCount' => Transaction::whereNull('cancelled_at')->whereDate('occurred_on', today())->count(),
-            'transactions' => $query->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
+            'todayCount' => $todayQuery->count(),
+            'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
         ]);
     }
     public function store(Request $request, CashLedger $ledger) {
