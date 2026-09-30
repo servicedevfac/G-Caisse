@@ -12,5 +12,7 @@ class Transaction extends Model
     public function canceller() { return $this->belongsTo(User::class, 'cancelled_by'); }
     public function isInflow(): bool { return in_array($this->type, ['recette', 'approvisionnement'], true); }
     public function canBeCancelled(): bool { return !$this->cancelled_at && $this->created_at->gte(now()->subDays(7)); }
+    public function companyName(): ?string { return $this->company ? config('caisse.companies.'.$this->company.'.name') : null; }
+    public function companyLogoPath(): ?string { return $this->company ? config('caisse.companies.'.$this->company.'.logo') : null; }
     public function getReferenceAttribute(): string { return 'CA-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT); }
 }

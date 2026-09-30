@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, RateLimiter};
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\ActivityLog;
 // Breeze session flow adapted to the Bootstrap interface.
 class AuthenticatedSessionController
 {
@@ -26,6 +27,7 @@ class AuthenticatedSessionController
         }
         RateLimiter::clear($key);
         $request->session()->regenerate();
+        ActivityLog::record($request->user(), 'login', 'S’est connecté à CaisseFlow.', $request);
         return redirect()->intended(route('dashboard'));
     }
     public function destroy(Request $request) {

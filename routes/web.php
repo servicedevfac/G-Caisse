@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\InvitationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ActivityController;
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/connexion', [AuthenticatedSessionController::class, 'store'])->name('login.store');
@@ -16,7 +17,7 @@ Route::get('/reinitialiser-mot-de-passe/{token}', [NewPasswordController::class,
 Route::post('/reinitialiser-mot-de-passe', [NewPasswordController::class, 'store'])->middleware('throttle:6,1')->name('password.update');
 Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('invitation.show');
 Route::post('/invitation/{token}', [InvitationController::class, 'store'])->name('invitation.store');
-Route::middleware(['auth', 'active'])->group(function () {
+Route::middleware(['auth', 'active', 'audit'])->group(function () {
     Route::post('/deconnexion', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/', [CashController::class, 'index'])->name('dashboard');
     Route::get('/mouvements/entrees', [CashController::class, 'entries'])->name('entries.index');
@@ -31,5 +32,6 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/utilisateurs', [UserController::class, 'store'])->name('users.store');
         Route::post('/utilisateurs/{user}/invitation', [UserController::class, 'resendInvitation'])->name('users.invitation');
         Route::patch('/utilisateurs/{user}/statut', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::get('/journal-activite', [ActivityController::class, 'index'])->name('activities.index');
     });
 });

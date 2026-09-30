@@ -94,6 +94,8 @@ class CashController
             'request_key' => 'required|uuid', 'type' => ['required', Rule::in(array_keys(Transaction::OPERATION_TYPES))],
             'amount' => ['required', 'regex:/^\d{1,10}(\.\d{1,2})?$/', 'numeric', 'min:0.01', 'max:9999999999.99'],
             'payment_method' => ['required', Rule::in(array_keys(Transaction::METHODS))],
+            'company' => ['nullable', 'required_if:type,depense', Rule::in(array_keys(config('caisse.companies')))],
+            'beneficiary' => ['nullable', 'required_if:type,depense', 'string', 'max:255'],
             'description' => 'required|string|max:255', 'justification' => 'nullable|string|max:5000',
             'occurred_on' => 'required|date_format:Y-m-d|before_or_equal:today',
             'source' => 'nullable|in:dashboard',
@@ -112,7 +114,8 @@ class CashController
         return back()->with('success', 'Opération annulée. Le solde a été recalculé.');
     }
     public function receipt(Transaction $transaction) {
-        return Pdf::loadView('receipt', compact('transaction'))->download($transaction->reference.'.pdf');
+        $transaction->loadMissing('user', 'canceller');
+        return Pdf::loadView('receipt', compact('transaction'))->setPaper('a4')->download($transaction->reference.'.pdf');
     }
     public function export(Request $request, string $format) {
         abort_unless(in_array($format, ['pdf', 'xlsx']), 404);

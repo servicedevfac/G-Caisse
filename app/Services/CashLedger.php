@@ -10,6 +10,9 @@ class CashLedger
         if (!array_key_exists($data['type'] ?? '', Transaction::OPERATION_TYPES)) {
             throw ValidationException::withMessages(['type' => 'Le type d’opération sélectionné n’est pas disponible.']);
         }
+        if (($data['type'] ?? null) === 'depense' && (!array_key_exists($data['company'] ?? '', config('caisse.companies')) || blank($data['beneficiary'] ?? null))) {
+            throw ValidationException::withMessages(['company' => 'L’entreprise et le bénéficiaire sont obligatoires pour une dépense.']);
+        }
 
         return DB::transaction(function () use ($data, $user) {
             $account = CashAccount::lockForUpdate()->findOrFail(1);

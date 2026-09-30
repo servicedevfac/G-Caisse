@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\UserInvitation;
+use App\Models\{ActivityLog, UserInvitation};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 use Illuminate\Validation\Rules\Password;
@@ -37,6 +37,7 @@ class InvitationController
 
         Auth::login($user);
         $request->session()->regenerate();
+        ActivityLog::record($user, 'activate_account', 'A activé son compte et effectué sa première connexion.', $request);
 
         return redirect()->route('dashboard')->with('success', 'Votre mot de passe a été créé. Bienvenue sur CaisseFlow.');
     }

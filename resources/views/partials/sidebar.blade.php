@@ -14,7 +14,8 @@
         </details>
         <a class="{{ request()->routeIs('history.*') && request('period') ? 'active' : '' }}" href="{{ route('history.index', ['period' => 'month']) }}"><span>▥</span> Rapports & statistiques</a>
         @if(auth()->user()->is_admin)
-            <a class="{{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><span>◎</span> Utilisateurs</a>
+            <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><span>◎</span> Utilisateurs</a>
+            <a class="{{ request()->routeIs('admin.activities.*') ? 'active' : '' }}" href="{{ route('admin.activities.index') }}"><span>◷</span> Journal d’activité</a>
         @endif
     </nav>
     <form method="post" action="{{ route('logout') }}" class="logout-form">@csrf<button class="logout-button" type="submit"><span aria-hidden="true">↪</span> Déconnexion</button></form>

@@ -218,4 +218,26 @@ class UserAccessTest extends TestCase
         $this->actingAs($blocked)->get('/')->assertRedirect(route('login'));
         $this->assertGuest();
     }
+
+    public function test_admin_can_view_user_activity_while_regular_user_cannot(): void
+    {
+        $admin = $this->user(['name' => 'Ben', 'is_admin' => true]);
+        $employee = $this->user(['name' => 'Awa Traoré', 'email' => 'awa@entreprise.test', 'password' => 'Securite123456']);
+
+        $this->post('/connexion', ['email' => $employee->email, 'password' => 'Securite123456'])->assertRedirect();
+        $this->get(route('history.index'))->assertOk();
+        $this->post(route('logout'))->assertRedirect(route('login'));
+
+        $this->assertDatabaseHas('activity_logs', ['user_id' => $employee->id, 'action' => 'login']);
+        $this->assertDatabaseHas('activity_logs', ['user_id' => $employee->id, 'action' => 'view_history']);
+        $this->assertDatabaseHas('activity_logs', ['user_id' => $employee->id, 'action' => 'logout']);
+
+        $this->actingAs($admin)->get(route('admin.activities.index'))
+            ->assertOk()
+            ->assertSee('Journal d’activité')
+            ->assertSee('Awa Traoré')
+            ->assertSee('S’est connecté à CaisseFlow.');
+
+        $this->actingAs($employee)->get(route('admin.activities.index'))->assertForbidden();
+    }
 }

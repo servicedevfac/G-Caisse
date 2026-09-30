@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
+use App\Models\{ActivityLog, User};
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,17 +27,21 @@ class NewPasswordController
             'password' => ['required', 'confirmed', PasswordRule::min(12)],
         ]);
 
-        $status = Password::reset($data, function (User $user, string $password) {
+        $resetUser = null;
+        $status = Password::reset($data, function (User $user, string $password) use (&$resetUser) {
             $user->forceFill([
                 'password' => $password,
                 'remember_token' => Str::random(60),
             ])->save();
             event(new PasswordReset($user));
+            $resetUser = $user;
         });
 
         if ($status !== Password::PASSWORD_RESET) {
             return back()->withInput($request->only('email'))->withErrors(['email' => 'Ce lien est invalide ou a expiré. Demandez un nouveau lien.']);
         }
+
+        ActivityLog::record($resetUser, 'reset_password', 'A réinitialisé son mot de passe.', $request);
 
         if (Auth::check()) {
             Auth::logout();

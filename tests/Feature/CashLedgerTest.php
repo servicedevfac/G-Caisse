@@ -11,7 +11,8 @@ class CashLedgerTest extends TestCase
     use RefreshDatabase;
     private function operator(): User { return User::create(['name'=>'Jenifer','email'=>Str::uuid().'@example.test','password'=>'test-password-only']); }
     private function data(string $type = 'approvisionnement', string $amount = '100.10'): array {
-        return ['request_key'=>(string) Str::uuid(),'type'=>$type,'amount'=>$amount,'description'=>'Test caisse','payment_method'=>'especes','occurred_on'=>today()->toDateString()];
+        return ['request_key'=>(string) Str::uuid(),'type'=>$type,'amount'=>$amount,'description'=>'Test caisse','payment_method'=>'especes','occurred_on'=>today()->toDateString(),
+            ...($type === 'depense' ? ['company'=>'fid', 'beneficiary'=>'Fournisseur Test'] : [])];
     }
     public function test_exact_amounts_and_duplicate_submission(): void {
         $user=$this->operator(); $ledger=app(CashLedger::class); $data=$this->data();
@@ -136,5 +137,32 @@ class CashLedgerTest extends TestCase
 
         $this->assertDatabaseCount('transactions', 1);
         $this->assertSame(50000, CashAccount::findOrFail(1)->balance_minor);
+    }
+
+    public function test_expense_requires_company_and_beneficiary_and_generates_branded_receipt(): void
+    {
+        $user = $this->operator();
+        app(CashLedger::class)->record($this->data('approvisionnement', '500'), $user);
+
+        $invalid = $this->data('depense', '25');
+        unset($invalid['company'], $invalid['beneficiary']);
+        $this->actingAs($user)->post('/operations', $invalid)->assertSessionHasErrors(['company', 'beneficiary']);
+
+        $this->actingAs($user)->post('/operations', [
+            ...$this->data('depense', '25'),
+            'company' => 'fac_immobilier',
+            'beneficiary' => 'Imprimerie Centrale',
+        ])->assertRedirect(route('expenses.index'));
+
+        $expense = Transaction::where('type', 'depense')->firstOrFail();
+        $this->assertSame('FAC IMMOBILIER', $expense->companyName());
+        $receipt = view('receipt', ['transaction' => $expense->load('user')])->render();
+        $this->assertSame(2, substr_count($receipt, 'BON DE CAISSE'));
+        $this->assertStringContainsString('FAC IMMOBILIER', $receipt);
+        $this->assertStringContainsString('Imprimerie Centrale', $receipt);
+        $this->assertStringContainsString('data:image/jpeg;base64,', $receipt);
+        $pdf = $this->actingAs($user)->get(route('transactions.receipt', $expense));
+        $pdf->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $pdf->getContent());
     }
 }
