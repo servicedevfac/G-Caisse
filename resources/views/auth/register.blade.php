@@ -16,9 +16,9 @@
                     <label class="form-label" for="email">Adresse e-mail professionnelle</label>
                     <div class="auth-input"><span aria-hidden="true">@</span><input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" placeholder="nom@entreprise.com" required autocomplete="username"></div>
                     <label class="form-label" for="password">Mot de passe <span class="muted">(12 caractères minimum)</span></label>
-                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password" class="form-control" type="password" name="password" placeholder="Choisissez un mot de passe" required autocomplete="new-password"></div>
+                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password" class="form-control" type="password" name="password" placeholder="Choisissez un mot de passe" required autocomplete="new-password">@include('partials.password-toggle', ['target' => 'password'])</div>
                     <label class="form-label" for="password_confirmation">Confirmer le mot de passe</label>
-                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password_confirmation" class="form-control" type="password" name="password_confirmation" placeholder="Répétez le mot de passe" required autocomplete="new-password"></div>
+                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password_confirmation" class="form-control" type="password" name="password_confirmation" placeholder="Répétez le mot de passe" required autocomplete="new-password">@include('partials.password-toggle', ['target' => 'password_confirmation'])</div>
                     <button class="btn btn-primary auth-submit" type="submit">Créer mon compte <span>→</span></button>
                 </form>
                 <p class="auth-switch">Déjà inscrit ? <a href="{{ route('login') }}">Se connecter</a></p>

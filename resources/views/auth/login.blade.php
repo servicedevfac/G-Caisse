@@ -14,7 +14,7 @@
                     <label class="form-label" for="email">Adresse e-mail</label>
                     <div class="auth-input"><span aria-hidden="true">@</span><input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" placeholder="nom@entreprise.com" required autofocus autocomplete="username"></div>
                     <label class="form-label" for="password">Mot de passe</label>
-                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password" class="form-control" type="password" name="password" placeholder="Votre mot de passe" required autocomplete="current-password"><button class="password-toggle" type="button" data-password-toggle aria-label="Afficher le mot de passe">Afficher</button></div>
+                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password" class="form-control" type="password" name="password" placeholder="Votre mot de passe" required autocomplete="current-password">@include('partials.password-toggle', ['target' => 'password'])</div>
                     <label class="remember-row"><input type="checkbox" name="remember" value="1"> <span>Rester connecté</span></label>
                     <button class="btn btn-primary auth-submit" type="submit">Se connecter <span>→</span></button>
                 </form>
@@ -26,4 +26,3 @@
     </div>
 </main>
 @endsection
-@push('scripts')<script>document.querySelectorAll('[data-password-toggle]').forEach(button=>button.addEventListener('click',()=>{const input=button.previousElementSibling;const visible=input.type==='text';input.type=visible?'password':'text';button.textContent=visible?'Afficher':'Masquer';button.setAttribute('aria-label',visible?'Afficher le mot de passe':'Masquer le mot de passe')}));</script>@endpush

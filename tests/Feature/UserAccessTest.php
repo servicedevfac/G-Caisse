@@ -35,6 +35,20 @@ class UserAccessTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'fatou@entreprise.test', 'is_admin' => false, 'is_active' => true]);
     }
 
+    public function test_authentication_pages_have_accessible_password_visibility_buttons(): void
+    {
+        $this->get('/connexion')
+            ->assertOk()
+            ->assertSee('Rester connecté')
+            ->assertSee('data-password-target="password"', false)
+            ->assertSee('aria-label="Afficher le mot de passe"', false);
+
+        $this->get('/inscription')
+            ->assertOk()
+            ->assertSee('data-password-target="password"', false)
+            ->assertSee('data-password-target="password_confirmation"', false);
+    }
+
     public function test_user_sees_another_users_operation_and_creator_name(): void
     {
         $creator = $this->user(['name' => 'Aïcha Koné']);
