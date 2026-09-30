@@ -21,10 +21,9 @@ class UserInvitationNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Votre accès à CaisseFlow')
-            ->greeting('Bienvenue sur CaisseFlow')
-            ->line('Un administrateur a créé un accès pour votre adresse e-mail.')
-            ->line('Utilisez le bouton ci-dessous pour renseigner votre nom et choisir votre mot de passe.')
-            ->action('Créer mon mot de passe', $this->invitationUrl)
-            ->line('Ce lien est valable pendant 72 heures. Si vous n’êtes pas concerné, ignorez ce message.');
+            ->markdown('mail.user-invitation', [
+                'invitationUrl' => $this->invitationUrl,
+                'recipientEmail' => $notifiable->email,
+            ]);
     }
 }

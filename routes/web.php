@@ -7,9 +7,9 @@ use App\Http\Controllers\Admin\UserController;
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/connexion', [AuthenticatedSessionController::class, 'store'])->name('login.store');
-    Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('invitation.show');
-    Route::post('/invitation/{token}', [InvitationController::class, 'store'])->name('invitation.store');
 });
+Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('invitation.show');
+Route::post('/invitation/{token}', [InvitationController::class, 'store'])->name('invitation.store');
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/deconnexion', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/', [CashController::class, 'index'])->name('dashboard');

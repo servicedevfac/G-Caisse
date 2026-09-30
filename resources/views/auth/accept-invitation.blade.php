@@ -7,8 +7,8 @@
         <section class="auth-panel">
             <div class="auth-form-card">
                 <p class="auth-kicker">ACTIVER VOTRE ACCÈS</p>
-                <h1>Bienvenue</h1>
-                <p class="auth-intro">Votre invitation concerne l’adresse <strong>{{ $invitation->user->email }}</strong>.</p>
+                <h1>Créez votre accès</h1>
+                <p class="auth-intro">Bienvenue sur CaisseFlow. Choisissez votre nom et votre mot de passe pour activer <strong>{{ $invitation->user->email }}</strong>.</p>
                 @if($errors->any())<div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
                 <form method="post" action="{{ route('invitation.store', $token) }}">@csrf
                     <label class="form-label" for="name">Nom complet</label>

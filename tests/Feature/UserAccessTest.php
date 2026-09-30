@@ -49,14 +49,14 @@ class UserAccessTest extends TestCase
             return true;
         });
 
-        $this->post(route('logout'));
-        $this->assertGuest();
-
         $this->get($invitationUrl)
             ->assertOk()
             ->assertSee('fatou@entreprise.test')
             ->assertSee('data-password-target="password"', false)
             ->assertSee('data-password-target="password_confirmation"', false);
+
+        $this->post(route('logout'));
+        $this->assertGuest();
 
         $this->post($invitationUrl, [
             'name' => 'Fatou Diallo',
@@ -76,6 +76,16 @@ class UserAccessTest extends TestCase
             ->assertSee('Rester connecté')
             ->assertSee('data-password-target="password"', false)
             ->assertSee('aria-label="Afficher le mot de passe"', false);
+    }
+
+    public function test_invitation_email_template_can_be_rendered(): void
+    {
+        config(['mail.default' => 'array']);
+        $user = $this->user(['email' => 'invitee@entreprise.test']);
+
+        $user->notify(new UserInvitationNotification('https://caisseflow.test/invitation/exemple'));
+
+        $this->assertTrue(true);
     }
 
     public function test_user_sees_another_users_operation_and_creator_name(): void
