@@ -44,6 +44,7 @@ class CashLedger
             $account = CashAccount::lockForUpdate()->findOrFail(1);
             $entry = Transaction::lockForUpdate()->findOrFail($transaction->id);
             if ($entry->cancelled_at) throw ValidationException::withMessages(['cancel' => 'Cette opération est déjà annulée.']);
+            if ($entry->created_at->lt(now()->subDays(7))) throw ValidationException::withMessages(['cancel' => 'Le délai de 7 jours pour annuler cette opération est dépassé.']);
             $delta = $entry->isInflow() ? -$entry->amount_minor : $entry->amount_minor;
             if ($account->balance_minor + $delta < 0) throw ValidationException::withMessages(['cancel' => 'Annulation impossible : les fonds ont déjà été utilisés.']);
             $entry->update(['cancelled_at' => now(), 'cancelled_by' => $user->id, 'cancellation_reason' => $reason]);

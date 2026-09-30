@@ -2,9 +2,11 @@
 namespace Tests\Feature;
 use App\Models\User;
 use App\Notifications\UserInvitationNotification;
+use App\Notifications\ResetPasswordNotification;
 use App\Services\CashLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -74,8 +76,39 @@ class UserAccessTest extends TestCase
         $this->get('/connexion')
             ->assertOk()
             ->assertSee('Rester connecté')
+            ->assertSee('Mot de passe oublié ?')
             ->assertSee('data-password-target="password"', false)
             ->assertSee('aria-label="Afficher le mot de passe"', false);
+    }
+
+    public function test_active_user_can_request_and_use_a_password_reset_link(): void
+    {
+        Notification::fake();
+        $user = $this->user(['email' => 'utilisateur@entreprise.test', 'password' => 'AncienMotDePasse123']);
+
+        $this->post(route('password.email'), ['email' => $user->email])
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $token = null;
+        Notification::assertSentTo($user, ResetPasswordNotification::class, function ($notification) use (&$token) {
+            $token = $notification->token;
+            return true;
+        });
+
+        $this->get(route('password.reset', ['token' => $token, 'email' => $user->email]))
+            ->assertOk()
+            ->assertSee('Nouveau mot de passe')
+            ->assertSee('data-password-target="password"', false);
+
+        $this->post(route('password.update'), [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'NouveauMotDePasse123',
+            'password_confirmation' => 'NouveauMotDePasse123',
+        ])->assertRedirect(route('login'));
+
+        $this->assertTrue(Hash::check('NouveauMotDePasse123', $user->fresh()->password));
     }
 
     public function test_invitation_email_template_can_be_rendered(): void

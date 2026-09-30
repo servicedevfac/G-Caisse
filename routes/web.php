@@ -3,11 +3,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CashController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\InvitationController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Admin\UserController;
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/connexion', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    Route::get('/mot-de-passe-oublie', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/mot-de-passe-oublie', [PasswordResetLinkController::class, 'store'])->middleware('throttle:6,1')->name('password.email');
 });
+Route::get('/reinitialiser-mot-de-passe/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+Route::post('/reinitialiser-mot-de-passe', [NewPasswordController::class, 'store'])->middleware('throttle:6,1')->name('password.update');
 Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('invitation.show');
 Route::post('/invitation/{token}', [InvitationController::class, 'store'])->name('invitation.store');
 Route::middleware(['auth', 'active'])->group(function () {

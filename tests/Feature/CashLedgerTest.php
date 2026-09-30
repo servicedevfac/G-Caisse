@@ -37,6 +37,21 @@ class CashLedgerTest extends TestCase
         try { $ledger->cancel($t,'Erreur de saisie',$user); $this->fail('Expected rejection'); }
         catch (ValidationException $e) { $this->assertNull($t->fresh()->cancelled_at); $this->assertSame(2010,CashAccount::find(1)->balance_minor); }
     }
+    public function test_operation_cannot_be_cancelled_after_seven_days(): void {
+        $user=$this->operator(); $ledger=app(CashLedger::class); $t=$ledger->record($this->data(),$user);
+        $t->update(['created_at' => now()->subDays(8)]);
+        try { $ledger->cancel($t,'Annulation trop tardive',$user); $this->fail('Expected rejection'); }
+        catch (ValidationException $e) {
+            $this->assertSame('Le délai de 7 jours pour annuler cette opération est dépassé.', $e->errors()['cancel'][0]);
+            $this->assertNull($t->fresh()->cancelled_at);
+            $this->assertSame(10010,CashAccount::find(1)->balance_minor);
+        }
+
+        $this->actingAs($user)->get(route('history.index'))
+            ->assertOk()
+            ->assertSee('Délai d’annulation expiré')
+            ->assertDontSee('data-reference="'.$t->reference.'"', false);
+    }
     public function test_guest_is_redirected_to_login(): void { $this->get('/')->assertRedirect('/connexion'); }
     public function test_authenticated_user_can_record(): void {
         $this->actingAs($this->operator())->post('/operations', $this->data())->assertRedirect(route('entries.index'));
@@ -58,6 +73,7 @@ class CashLedgerTest extends TestCase
             ->assertSee('Historique des mouvements')
             ->assertSee('Déconnexion')
             ->assertSee('Les flux de mes opérations')
+            ->assertDontSee('Votre caisse en équilibre')
             ->assertSee('cashChart', false)
             ->assertSee('typeChart', false)
             ->assertSee('paymentChart', false)

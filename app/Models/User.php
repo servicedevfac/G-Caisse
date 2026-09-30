@@ -1,5 +1,6 @@
 <?php
 namespace App\Models;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
@@ -11,4 +12,5 @@ class User extends Authenticatable
     protected function casts(): array { return ['password' => 'hashed', 'is_admin' => 'boolean', 'is_active' => 'boolean', 'invitation_pending' => 'boolean']; }
     public function transactions() { return $this->hasMany(Transaction::class); }
     public function invitation() { return $this->hasOne(UserInvitation::class); }
+    public function sendPasswordResetNotification($token): void { $this->notify(new ResetPasswordNotification($token)); }
 }
