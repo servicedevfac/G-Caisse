@@ -1,8 +1,10 @@
 <?php
 namespace Tests\Feature;
 use App\Models\User;
+use App\Notifications\UserInvitationNotification;
 use App\Services\CashLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -21,32 +23,59 @@ class UserAccessTest extends TestCase
         ], ...$attributes]);
     }
 
-    public function test_employee_can_register_and_reaches_shared_dashboard(): void
+    public function test_public_registration_is_disabled(): void
     {
-        $response = $this->post('/inscription', [
-            'name' => 'Fatou Diallo',
-            'email' => 'fatou@entreprise.test',
-            'password' => 'Securite123456',
-            'password_confirmation' => 'Securite123456',
-        ]);
-
-        $response->assertRedirect(route('dashboard'));
-        $this->assertAuthenticated();
-        $this->assertDatabaseHas('users', ['email' => 'fatou@entreprise.test', 'is_admin' => false, 'is_active' => true]);
+        $this->get('/inscription')->assertNotFound();
+        $this->post('/inscription')->assertNotFound();
+        $this->get('/connexion')->assertOk()->assertDontSee('S’inscrire')->assertSee('créé par l’administrateur');
     }
 
-    public function test_authentication_pages_have_accessible_password_visibility_buttons(): void
+    public function test_admin_invites_user_who_chooses_name_and_password(): void
+    {
+        Notification::fake();
+        $admin = $this->user(['name' => 'Ben', 'is_admin' => true]);
+
+        $this->actingAs($admin)->post(route('admin.users.store'), [
+            'email' => 'fatou@entreprise.test',
+        ])->assertRedirect();
+
+        $invited = User::where('email', 'fatou@entreprise.test')->firstOrFail();
+        $this->assertTrue($invited->invitation_pending);
+        $this->assertDatabaseHas('user_invitations', ['user_id' => $invited->id]);
+
+        $invitationUrl = null;
+        Notification::assertSentTo($invited, UserInvitationNotification::class, function ($notification) use (&$invitationUrl) {
+            $invitationUrl = $notification->invitationUrl;
+            return true;
+        });
+
+        $this->post(route('logout'));
+        $this->assertGuest();
+
+        $this->get($invitationUrl)
+            ->assertOk()
+            ->assertSee('fatou@entreprise.test')
+            ->assertSee('data-password-target="password"', false)
+            ->assertSee('data-password-target="password_confirmation"', false);
+
+        $this->post($invitationUrl, [
+            'name' => 'Fatou Diallo',
+            'password' => 'Securite123456',
+            'password_confirmation' => 'Securite123456',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($invited);
+        $this->assertFalse($invited->fresh()->invitation_pending);
+        $this->assertDatabaseMissing('user_invitations', ['user_id' => $invited->id]);
+    }
+
+    public function test_login_has_accessible_password_visibility_button(): void
     {
         $this->get('/connexion')
             ->assertOk()
             ->assertSee('Rester connecté')
             ->assertSee('data-password-target="password"', false)
             ->assertSee('aria-label="Afficher le mot de passe"', false);
-
-        $this->get('/inscription')
-            ->assertOk()
-            ->assertSee('data-password-target="password"', false)
-            ->assertSee('data-password-target="password_confirmation"', false);
     }
 
     public function test_user_sees_another_users_operation_and_creator_name(): void

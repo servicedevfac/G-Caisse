@@ -18,9 +18,7 @@
                     <label class="remember-row"><input type="checkbox" name="remember" value="1"> <span>Rester connecté</span></label>
                     <button class="btn btn-primary auth-submit" type="submit">Se connecter <span>→</span></button>
                 </form>
-                <div class="auth-divider"><span>ou</span></div>
-                <a class="btn auth-register-button" href="{{ route('register') }}">S’inscrire</a>
-                <p class="auth-help">Nouveau dans l’entreprise ? Créez votre accès pour rejoindre la caisse partagée.</p>
+                <p class="auth-help">Votre accès est créé par l’administrateur. Consultez votre e-mail pour choisir votre mot de passe lors de votre première connexion.</p>
             </div>
         </section>
     </div>

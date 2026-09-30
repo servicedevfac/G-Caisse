@@ -12,6 +12,9 @@ class AuthenticatedSessionController
         $credentials = $request->validate(['email' => 'required|email', 'password' => 'required|string']);
         $key = Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
         if (RateLimiter::tooManyAttempts($key, 5)) throw ValidationException::withMessages(['email' => 'Trop de tentatives. Réessayez dans '.RateLimiter::availableIn($key).' secondes.']);
+        if (\App\Models\User::where('email', $credentials['email'])->where('invitation_pending', true)->exists()) {
+            throw ValidationException::withMessages(['email' => 'Votre compte attend son activation. Utilisez le lien reçu par e-mail.']);
+        }
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['email' => 'Adresse e-mail ou mot de passe incorrect.']);
