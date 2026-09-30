@@ -1,5 +1,5 @@
-<section class="auth-visual" aria-label="Présentation de Clair">
-    <a class="auth-brand" href="{{ route('login') }}"><span>c.</span> clair.</a>
+<section class="auth-visual" aria-label="Présentation de CaisseFlow">
+    <a class="auth-brand" href="{{ route('login') }}"><span>CF</span> CaisseFlow</a>
     <div class="auth-visual-copy">
         <div class="wallet-badge" aria-hidden="true">▣</div>
         <h2>Votre caisse,<br>simple et efficace.</h2>
