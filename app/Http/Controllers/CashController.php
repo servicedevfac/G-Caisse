@@ -106,6 +106,7 @@ class CashController
         return redirect()->route($destination)->with('success', 'Opération '.$transaction->reference.' enregistrée.');
     }
     public function cancel(Request $request, Transaction $transaction, CashLedger $ledger) {
+        abort_unless($transaction->canBeCancelledBy($request->user()), 403);
         $data = $request->validate(['cancellation_reason' => 'required|string|min:5|max:255']);
         $ledger->cancel($transaction, $data['cancellation_reason'], $request->user());
         return back()->with('success', 'Opération annulée. Le solde a été recalculé.');
