@@ -1,6 +1,5 @@
 <aside class="sidebar">
     <a class="brand" href="{{ route('dashboard') }}"><span class="brand-mark">CF</span> CaisseFlow</a>
-    <div class="workspace"><span class="workspace-icon">E</span><div>Mon entreprise<small>Espace de gestion</small></div><span class="ms-auto muted">⌄</span></div>
     <p class="nav-label">ESPACE CAISSE</p>
     <nav aria-label="Navigation principale">
         <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><span>◫</span> Tableau de bord</a>

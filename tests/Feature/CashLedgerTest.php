@@ -69,6 +69,8 @@ class CashLedgerTest extends TestCase
             ->assertOk()
             ->assertSee('Tableau de bord')
             ->assertSee('Mouvements de caisse')
+            ->assertDontSee('Mon entreprise')
+            ->assertDontSee('Espace de gestion')
             ->assertSee('Gestion des entrées')
             ->assertSee('Gestion des sorties')
             ->assertSee('Historique des mouvements')

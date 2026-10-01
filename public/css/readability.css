@@ -31,14 +31,12 @@ h2 {
     font-size: 36px;
 }
 
-.workspace {
-    padding: 15px 12px;
-    font-size: 14px;
-}
-
-.workspace small,
 .profile small {
     font-size: 12px;
+}
+
+.sidebar > .nav-label {
+    margin-top: 35px;
 }
 
 .nav-label,
