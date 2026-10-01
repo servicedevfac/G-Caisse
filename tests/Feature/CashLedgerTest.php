@@ -18,6 +18,7 @@ class CashLedgerTest extends TestCase
         $user=$this->operator(); $ledger=app(CashLedger::class); $data=$this->data();
         $first=$ledger->record($data,$user); $again=$ledger->record($data,$user);
         $this->assertSame($first->id,$again->id); $this->assertDatabaseCount('transactions',1);
+        $this->assertSame('CF-000001', $first->reference);
         $ledger->record($this->data('depense','0.10'),$user);
         $this->assertSame(10000,CashAccount::find(1)->balance_minor);
     }
