@@ -1,10 +1,12 @@
 <?php
 namespace Tests\Feature;
+use App\Exports\TransactionsExport;
 use App\Models\{CashAccount, Transaction, User};
 use App\Services\CashLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 class CashLedgerTest extends TestCase
 {
@@ -220,5 +222,28 @@ class CashLedgerTest extends TestCase
         $pdf = $this->actingAs($user)->get(route('transactions.receipt', $expense));
         $pdf->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $pdf->getContent());
+    }
+
+    public function test_reports_exclude_cancelled_operations_and_status_columns(): void
+    {
+        $user = $this->operator();
+        $ledger = app(CashLedger::class);
+        $active = $ledger->record([...$this->data('approvisionnement', '100'), 'description' => 'Opération active'], $user);
+        $cancelled = $ledger->record([...$this->data('approvisionnement', '50'), 'description' => 'Opération annulée'], $user);
+        $ledger->cancel($cancelled, 'Erreur de rapport', $user);
+
+        Excel::fake();
+        $this->actingAs($user)->get(route('reports.export', ['format' => 'xlsx', 'status' => 'cancelled']))->assertOk();
+        Excel::assertDownloaded('rapport-caisse.xlsx', function (TransactionsExport $export) use ($active, $cancelled) {
+            return $export->collection()->pluck('id')->all() === [$active->id]
+                && !in_array('Statut', $export->headings(), true)
+                && count($export->map($active)) === 7
+                && !$export->collection()->contains('id', $cancelled->id);
+        });
+
+        $html = view('report', ['transactions' => collect([$active])])->render();
+        $this->assertStringNotContainsString('<th>Statut</th>', $html);
+        $this->assertStringNotContainsString('Validée', $html);
+        $this->assertStringNotContainsString('Annulée', $html);
     }
 }

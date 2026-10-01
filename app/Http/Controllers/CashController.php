@@ -153,6 +153,7 @@ class CashController
     }
     public function export(Request $request, string $format) {
         abort_unless(in_array($format, ['pdf', 'xlsx']), 404);
+        $request->merge(['status' => 'active']);
         $query = $this->filtered($request)->orderBy('occurred_on')->orderBy('id');
         if ((clone $query)->count() > 5000) return back()->withErrors(['export' => 'Limitez la période à 5 000 opérations maximum.']);
         $transactions = $query->get();
