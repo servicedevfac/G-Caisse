@@ -16,7 +16,7 @@
 @if($transaction->cancelled_at)<div class="cancelled">ANNULÉ</div>@endif
 <table class="details"><tr><td class="label">Bénéficiaire :</td><td class="value">{{ $transaction->beneficiary ?: '—' }}</td></tr><tr><td class="label">MONTANT :</td><td class="value amount">{{ $amount }}</td></tr></table>
 <table class="object-table"><tr><td class="object-label">OBJET :</td><td class="object-line">{{ $transaction->description }}</td></tr><tr><td></td><td class="object-line">{{ $transaction->justification ?: ' ' }}</td></tr><tr><td></td><td class="object-line">&nbsp;</td></tr></table>
-<div class="meta">Mode de paiement : {{ App\Models\Transaction::METHODS[$transaction->payment_method] }} · Enregistré par {{ $transaction->user->name }} le {{ $transaction->created_at->format('d/m/Y à H:i') }}</div>
+<div class="meta">Enregistré par {{ $transaction->user->name }} le {{ $transaction->created_at->format('d/m/Y à H:i') }}</div>
 <div class="sign-title">SIGNATURES</div><table class="signatures"><tr><td>GÉRANT</td><td>CAISSE</td><td>BÉNÉFICIAIRE</td></tr></table>
 </section>
 @endforeach
