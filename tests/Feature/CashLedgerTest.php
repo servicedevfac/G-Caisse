@@ -168,6 +168,8 @@ class CashLedgerTest extends TestCase
         $this->assertSame('FAC IMMOBILIER', $expense->companyName());
         $receipt = view('receipt', ['transaction' => $expense->load('user')])->render();
         $this->assertSame(2, substr_count($receipt, 'BON DE CAISSE'));
+        $this->assertSame(2, substr_count($receipt, 'N° ....../......./'.today()->format('Y')));
+        $this->assertSame(2, substr_count($receipt, 'class="object-table"'));
         $this->assertStringNotContainsString('FAC IMMOBILIER', $receipt);
         $this->assertStringContainsString('Imprimerie Centrale', $receipt);
         $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
