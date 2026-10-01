@@ -124,12 +124,13 @@ class CashController
             'request_key' => 'required|uuid', 'type' => ['required', Rule::in(array_keys(Transaction::OPERATION_TYPES))],
             'amount' => ['required', 'regex:/^\d{1,10}(\.\d{1,2})?$/', 'numeric', 'min:0.01', 'max:9999999999.99'],
             'payment_method' => ['required', Rule::in(array_keys(Transaction::METHODS))],
-            'company' => ['nullable', 'required_if:type,depense', Rule::in(array_keys(config('caisse.companies')))],
+            'company' => ['required', Rule::in(array_keys(config('caisse.companies')))],
             'beneficiary' => ['nullable', 'required_if:type,depense', 'string', 'max:255'],
             'description' => 'required|string|max:255', 'justification' => 'nullable|string|max:5000',
             'occurred_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.config('caisse.operation_start_date'), 'before_or_equal:today'],
             'source' => 'nullable|in:dashboard',
         ], [
+            'company.required' => 'Sélectionnez l’entreprise concernée.',
             'occurred_on.after_or_equal' => 'La date de l’opération doit être égale ou postérieure au 1er janvier 2024.',
             'occurred_on.before_or_equal' => 'La date de l’opération ne peut pas être postérieure à aujourd’hui.',
         ]);

@@ -13,7 +13,7 @@ class CashLedgerTest extends TestCase
     use RefreshDatabase;
     private function operator(): User { return User::create(['name'=>'Jenifer','email'=>Str::uuid().'@example.test','password'=>'test-password-only']); }
     private function data(string $type = 'approvisionnement', string $amount = '100.10'): array {
-        return ['request_key'=>(string) Str::uuid(),'type'=>$type,'amount'=>$amount,'description'=>'Test caisse','payment_method'=>'especes','occurred_on'=>today()->toDateString(),
+        return ['request_key'=>(string) Str::uuid(),'type'=>$type,'amount'=>$amount,'description'=>'Test caisse','payment_method'=>'especes','occurred_on'=>today()->toDateString(),'company'=>'fid',
             ...($type === 'depense' ? ['company'=>'fid', 'beneficiary'=>'Fournisseur Test'] : [])];
     }
     public function test_exact_amounts_and_duplicate_submission(): void {
@@ -222,6 +222,24 @@ class CashLedgerTest extends TestCase
         $pdf = $this->actingAs($user)->get(route('transactions.receipt', $expense));
         $pdf->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $pdf->getContent());
+    }
+
+    public function test_funding_requires_company_and_uses_its_logo_on_receipt(): void
+    {
+        $user = $this->operator();
+        $invalid = $this->data('approvisionnement', '150');
+        unset($invalid['company']);
+
+        $this->actingAs($user)->post('/operations', $invalid)->assertSessionHasErrors('company');
+        $this->actingAs($user)->post('/operations', [
+            ...$this->data('approvisionnement', '150'),
+            'company' => 'voyage_edifiant',
+        ])->assertRedirect(route('entries.index'));
+
+        $funding = Transaction::where('type', 'approvisionnement')->firstOrFail();
+        $this->assertSame('VOYAGEDIFIANT', $funding->companyName());
+        $receipt = view('receipt', ['transaction' => $funding->load('user')])->render();
+        $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
     }
 
     public function test_reports_exclude_cancelled_operations_and_status_columns(): void
