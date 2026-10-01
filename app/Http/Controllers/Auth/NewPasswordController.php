@@ -24,7 +24,7 @@ class NewPasswordController
         $data = $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', PasswordRule::min(12)],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
         $resetUser = null;

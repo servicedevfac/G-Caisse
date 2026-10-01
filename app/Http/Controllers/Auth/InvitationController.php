@@ -21,7 +21,7 @@ class InvitationController
         $invitation = $this->validInvitation($token);
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'password' => ['required', 'confirmed', Password::min(12)],
+            'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
         $user = $invitation->user;

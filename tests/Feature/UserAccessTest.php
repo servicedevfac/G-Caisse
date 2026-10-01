@@ -62,8 +62,8 @@ class UserAccessTest extends TestCase
 
         $this->post($invitationUrl, [
             'name' => 'Fatou Diallo',
-            'password' => 'Securite123456',
-            'password_confirmation' => 'Securite123456',
+            'password' => 'Abcd1234',
+            'password_confirmation' => 'Abcd1234',
         ])->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($invited);
@@ -104,11 +104,11 @@ class UserAccessTest extends TestCase
         $this->post(route('password.update'), [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'NouveauMotDePasse123',
-            'password_confirmation' => 'NouveauMotDePasse123',
+            'password' => 'Nouv1234',
+            'password_confirmation' => 'Nouv1234',
         ])->assertRedirect(route('login'));
 
-        $this->assertTrue(Hash::check('NouveauMotDePasse123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('Nouv1234', $user->fresh()->password));
     }
 
     public function test_invitation_email_template_can_be_rendered(): void

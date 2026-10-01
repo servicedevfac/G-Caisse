@@ -13,8 +13,8 @@
                 <form method="post" action="{{ route('invitation.store', $token) }}">@csrf
                     <label class="form-label" for="name">Nom complet</label>
                     <div class="auth-input"><span aria-hidden="true">●</span><input id="name" class="form-control" name="name" value="{{ old('name') }}" placeholder="Votre nom et prénom" required autofocus autocomplete="name"></div>
-                    <label class="form-label" for="password">Mot de passe <span class="muted">(12 caractères minimum)</span></label>
-                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password" class="form-control" type="password" name="password" placeholder="Choisissez votre mot de passe" required autocomplete="new-password">@include('partials.password-toggle', ['target' => 'password'])</div>
+                    <label class="form-label" for="password">Mot de passe <span class="muted">(8 caractères minimum)</span></label>
+                    <div class="auth-input"><span aria-hidden="true">●</span><input id="password" class="form-control" type="password" name="password" placeholder="Choisissez votre mot de passe" minlength="8" required autocomplete="new-password">@include('partials.password-toggle', ['target' => 'password'])</div>
                     <label class="form-label" for="password_confirmation">Confirmer le mot de passe</label>
                     <div class="auth-input"><span aria-hidden="true">●</span><input id="password_confirmation" class="form-control" type="password" name="password_confirmation" placeholder="Répétez votre mot de passe" required autocomplete="new-password">@include('partials.password-toggle', ['target' => 'password_confirmation'])</div>
                     <button class="btn btn-primary auth-submit" type="submit">Activer mon compte <span>→</span></button>

@@ -56,10 +56,6 @@ class CashController
         foreach (array_keys(Transaction::TYPES) as $type) $totals[$type] = (int) (clone $active)->where('type', $type)->sum('amount_minor');
         $allActive = Transaction::query()->whereNull('cancelled_at');
         if (!$isGlobalDashboard) $allActive->where('user_id', $user->id);
-        $typeChart = collect(Transaction::OPERATION_TYPES)->map(fn ($label, $type) => [
-            'label' => $label,
-            'value' => (int) (clone $allActive)->where('type', $type)->sum('amount_minor') / 100,
-        ])->values();
         $paymentChart = collect(Transaction::METHODS)->map(fn ($label, $method) => [
             'label' => $label,
             'value' => (int) (clone $allActive)->where('payment_method', $method)->sum('amount_minor') / 100,
@@ -83,7 +79,7 @@ class CashController
         return view('dashboard', [
             'page' => $page, 'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
             'totals' => $totals, 'chart' => $chart,
-            'typeChart' => $typeChart, 'paymentChart' => $paymentChart,
+            'paymentChart' => $paymentChart,
             'availableBalance' => max(0, $personalAvailable),
             'todayCount' => $todayQuery->count(),
             'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),

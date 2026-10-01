@@ -76,7 +76,8 @@ class CashLedgerTest extends TestCase
             ->assertSee('Les flux de mes opérations')
             ->assertDontSee('Votre caisse en équilibre')
             ->assertSee('cashChart', false)
-            ->assertSee('typeChart', false)
+            ->assertDontSee('typeChart', false)
+            ->assertDontSee('Répartition des mouvements')
             ->assertSee('paymentChart', false)
             ->assertSee('chart.umd.min.js', false)
             ->assertDontSee('Historique commun des opérations')
@@ -98,6 +99,7 @@ class CashLedgerTest extends TestCase
             ->assertSee('Approvisionnement visible')
             ->assertDontSee('Dépense masquée')
             ->assertSee('75,00')
+            ->assertDontSee('aria-label="Reçu ', false)
             ->assertDontSee('cashChart', false);
     }
 
@@ -112,6 +114,7 @@ class CashLedgerTest extends TestCase
             ->assertSee('Gestion des sorties')
             ->assertSee('Nouvelle dépense')
             ->assertSee('Dépense visible')
+            ->assertSee('aria-label="Reçu ', false)
             ->assertDontSee('Approvisionnement masqué')
             ->assertDontSee('cashChart', false);
     }
