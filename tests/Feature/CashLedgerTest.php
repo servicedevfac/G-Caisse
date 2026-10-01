@@ -62,6 +62,7 @@ class CashLedgerTest extends TestCase
     public function test_invalid_amount_and_future_date_are_rejected(): void {
         $user=$this->operator();
         $this->actingAs($user)->post('/operations',[...$this->data('approvisionnement','-10'),'occurred_on'=>today()->addDay()->toDateString()])->assertSessionHasErrors(['amount','occurred_on']);
+        $this->actingAs($user)->post('/operations',[...$this->data('approvisionnement','10'),'occurred_on'=>'2023-12-31'])->assertSessionHasErrors('occurred_on');
         $this->assertDatabaseCount('transactions',0);
     }
     public function test_dashboard_renders_for_authenticated_user(): void {
@@ -90,6 +91,7 @@ class CashLedgerTest extends TestCase
             ->assertDontSee('Historique commun des opérations')
             ->assertSee('Nouvelle opération')
             ->assertSee('data-bs-target="#operationModal"', false)
+            ->assertSee('min="2024-01-01"', false)
             ->assertSee('Approvisionnement')
             ->assertSee('Dépense');
     }

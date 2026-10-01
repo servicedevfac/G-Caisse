@@ -94,8 +94,11 @@ class CashController
             'company' => ['nullable', 'required_if:type,depense', Rule::in(array_keys(config('caisse.companies')))],
             'beneficiary' => ['nullable', 'required_if:type,depense', 'string', 'max:255'],
             'description' => 'required|string|max:255', 'justification' => 'nullable|string|max:5000',
-            'occurred_on' => 'required|date_format:Y-m-d|before_or_equal:today',
+            'occurred_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.config('caisse.operation_start_date'), 'before_or_equal:today'],
             'source' => 'nullable|in:dashboard',
+        ], [
+            'occurred_on.after_or_equal' => 'La date de l’opération doit être égale ou postérieure au 1er janvier 2024.',
+            'occurred_on.before_or_equal' => 'La date de l’opération ne peut pas être postérieure à aujourd’hui.',
         ]);
         $source = $data['source'] ?? null;
         unset($data['source']);
