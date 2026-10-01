@@ -111,6 +111,19 @@ nav a,
     min-width: 180px;
 }
 
+.chart-period-form {
+    flex: 0 0 auto;
+}
+
+.chart-period-form .period-tag {
+    width: auto;
+    min-width: 160px;
+    padding: 9px 34px 9px 12px;
+    background-color: #fff;
+    color: var(--ink);
+    cursor: pointer;
+}
+
 .analytics-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

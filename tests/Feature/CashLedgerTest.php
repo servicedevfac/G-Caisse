@@ -79,6 +79,10 @@ class CashLedgerTest extends TestCase
             ->assertSee('Historique des mouvements')
             ->assertSee('Déconnexion')
             ->assertSee('Les flux de mes opérations')
+            ->assertSee('Aujourd’hui')
+            ->assertSee('7 derniers jours')
+            ->assertSee('Ce mois')
+            ->assertSee('Toutes les périodes')
             ->assertDontSee('Votre caisse en équilibre')
             ->assertSee('cashChart', false)
             ->assertDontSee('typeChart', false)
@@ -94,6 +98,18 @@ class CashLedgerTest extends TestCase
             ->assertSee('min="2024-01-01"', false)
             ->assertSee('Approvisionnement')
             ->assertSee('Dépense');
+    }
+    public function test_dashboard_chart_period_can_be_changed(): void {
+        $user = $this->operator();
+        app(CashLedger::class)->record([...$this->data('approvisionnement', '75'), 'description' => 'Flux filtré'], $user);
+
+        $this->actingAs($user)->get(route('dashboard', ['chart_period' => 'month']))
+            ->assertOk()
+            ->assertSee('<option value="month" selected>Ce mois</option>', false)
+            ->assertSee('Flux filtré');
+
+        $this->actingAs($user)->get(route('dashboard', ['chart_period' => 'invalid']))
+            ->assertSessionHasErrors('chart_period');
     }
     public function test_entry_flow_only_includes_funding(): void {
         $user = $this->operator();

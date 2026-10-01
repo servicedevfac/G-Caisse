@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Facades\Excel;
 class CashController
 {
     private function filtered(Request $request) {
-        $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])], 'type' => ['nullable', Rule::in(array_keys(Transaction::OPERATION_TYPES))], 'flow' => 'nullable|in:entree,sortie', 'q' => 'nullable|string|max:100', 'period' => 'nullable|in:day,week,month', 'status' => 'nullable|in:active,cancelled']);
+        $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])], 'type' => ['nullable', Rule::in(array_keys(Transaction::OPERATION_TYPES))], 'flow' => 'nullable|in:entree,sortie', 'q' => 'nullable|string|max:100', 'period' => 'nullable|in:day,week,month', 'chart_period' => 'nullable|in:day,7days,month,all', 'status' => 'nullable|in:active,cancelled']);
         $query = Transaction::query();
         if ($request->filled('period')) {
             $start = match ($request->period) { 'day' => today(), 'week' => today()->startOfWeek(), default => today()->startOfMonth() };
@@ -54,18 +54,15 @@ class CashController
         $active = (clone $metricsQuery)->whereNull('cancelled_at');
         $totals = [];
         foreach (array_keys(Transaction::TYPES) as $type) $totals[$type] = (int) (clone $active)->where('type', $type)->sum('amount_minor');
+        $chartPeriod = $request->input('chart_period', '7days');
         $allActive = Transaction::query()->whereNull('cancelled_at');
         if (!$isGlobalDashboard) $allActive->where('user_id', $user->id);
+        $paymentQuery = $this->forChartPeriod(clone $allActive, $chartPeriod);
         $paymentChart = collect(Transaction::METHODS)->map(fn ($label, $method) => [
             'label' => $label,
-            'value' => (int) (clone $allActive)->where('payment_method', $method)->sum('amount_minor') / 100,
+            'value' => (int) (clone $paymentQuery)->where('payment_method', $method)->sum('amount_minor') / 100,
         ])->values();
-        $chart = collect(range(6, 0))->map(function ($offset) use ($isGlobalDashboard, $user) {
-            $date = today()->subDays($offset);
-            $query = Transaction::whereNull('cancelled_at')->whereDate('occurred_on', $date);
-            if (!$isGlobalDashboard) $query->where('user_id', $user->id);
-            return ['label' => $date->format('d/m'), 'in' => (int) (clone $query)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor') / 100, 'out' => (int) (clone $query)->whereIn('type', ['depense', 'retrait'])->sum('amount_minor') / 100];
-        });
+        $chart = $this->chartData($allActive, $chartPeriod);
         $balance = CashAccount::findOrFail(1)->balance_minor;
         $personalAvailable = (int) Transaction::where('user_id', $user->id)->whereNull('cancelled_at')->where('type', 'approvisionnement')->sum('amount_minor')
             - (int) Transaction::where('user_id', $user->id)->whereNull('cancelled_at')->where('type', 'depense')->sum('amount_minor');
@@ -80,11 +77,47 @@ class CashController
             'page' => $page, 'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
             'totals' => $totals, 'chart' => $chart,
             'paymentChart' => $paymentChart,
+            'chartPeriod' => $chartPeriod,
             'availableBalance' => max(0, $personalAvailable),
             'todayCount' => (clone $todayQuery)->count(),
             'todayTransactions' => (clone $todayQuery)->with('user')->orderByDesc('created_at')->orderByDesc('id')->limit(10)->get(),
             'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
         ]);
+    }
+    private function forChartPeriod($query, string $period) {
+        return match ($period) {
+            'day' => $query->whereDate('occurred_on', today()),
+            'month' => $query->whereBetween('occurred_on', [today()->startOfMonth()->toDateString(), today()->toDateString()]),
+            'all' => $query,
+            default => $query->whereBetween('occurred_on', [today()->subDays(6)->toDateString(), today()->toDateString()]),
+        };
+    }
+    private function chartData($query, string $period) {
+        if ($period === 'all') {
+            $firstDate = (clone $query)->min('occurred_on');
+            $cursor = $firstDate ? \Carbon\Carbon::parse($firstDate)->startOfMonth() : today()->startOfMonth();
+            $periods = collect();
+            while ($cursor->lte(today())) {
+                $periods->push(['start' => $cursor->copy()->startOfMonth(), 'end' => $cursor->copy()->endOfMonth(), 'label' => $cursor->translatedFormat('M Y')]);
+                $cursor->addMonth();
+            }
+        } else {
+            $dates = match ($period) {
+                'day' => collect([today()]),
+                'month' => collect(range(0, today()->day - 1))->map(fn ($offset) => today()->startOfMonth()->addDays($offset)),
+                default => collect(range(6, 0))->map(fn ($offset) => today()->subDays($offset)),
+            };
+            $periods = $dates->map(fn ($date) => ['start' => $date->copy()->startOfDay(), 'end' => $date->copy()->endOfDay(), 'label' => $period === 'day' ? 'Aujourd’hui' : $date->format('d/m')]);
+        }
+
+        return $periods->map(function ($range) use ($query) {
+            $periodQuery = (clone $query)->whereBetween('occurred_on', [$range['start']->toDateString(), $range['end']->toDateString()]);
+            return [
+                'label' => $range['label'],
+                'in' => (int) (clone $periodQuery)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor') / 100,
+                'out' => (int) (clone $periodQuery)->whereIn('type', ['depense', 'retrait'])->sum('amount_minor') / 100,
+            ];
+        });
     }
     public function store(Request $request, CashLedger $ledger) {
         $data = $request->validate([
