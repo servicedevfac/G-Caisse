@@ -181,7 +181,9 @@ class UserAccessTest extends TestCase
             ->assertOk()
             ->assertSee('VUE GLOBALE DE L’ENTREPRISE')
             ->assertSee('Solde global')
-            ->assertSee('<div class="stat-value">320,00', false);
+            ->assertSee('<div class="stat-value">320,00', false)
+            ->assertSee('Votre solde personnel disponible : <strong>0,00 XOF</strong>', false)
+            ->assertSee('Le solde global affiché sur le tableau de bord appartient à l’ensemble des utilisateurs.');
     }
 
     public function test_admin_can_view_and_block_user_without_delete_action(): void
