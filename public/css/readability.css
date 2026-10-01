@@ -102,14 +102,11 @@ nav a,
 }
 
 .document-upload-form {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 18px;
+    display: block;
 }
 
 .document-description-field {
-    grid-column: 1 / -1;
+    margin-bottom: 18px;
 }
 
 .document-description-field textarea {
@@ -119,6 +116,17 @@ nav a,
 
 .document-upload-form .btn {
     min-width: 180px;
+}
+
+.document-file-controls {
+    display: flex;
+    align-items: stretch;
+    gap: 14px;
+}
+
+.document-file-controls .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .document-description {
@@ -521,12 +529,15 @@ summary:focus-visible {
     }
 
     .document-upload-form {
-        grid-template-columns: 1fr;
-        align-items: stretch;
+        display: block;
     }
 
     .document-description-field {
-        grid-column: 1;
+        margin-bottom: 16px;
+    }
+
+    .document-file-controls {
+        flex-direction: column;
     }
 
     .document-upload-form .btn {

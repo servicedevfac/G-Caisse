@@ -21,8 +21,7 @@
             <div class="panel-heading"><div><h2>Ajouter un document</h2><p>PDF, Word, Excel, JPG, PNG, TXT ou CSV · 10 Mo maximum</p></div></div>
             <form method="post" action="{{ route('documents.store') }}" enctype="multipart/form-data" class="document-upload-form">@csrf
                 <div class="document-description-field"><label class="form-label" for="description">Description du document</label><textarea class="form-control" id="description" name="description" rows="3" maxlength="1000" placeholder="Exemple : Rapport mensuel des dépenses de septembre 2026" required>{{ old('description') }}</textarea><div class="form-text">Indiquez clairement le contenu ou l’utilité du document.</div></div>
-                <div class="document-file-field"><label class="form-label" for="document">Choisir un fichier</label><input class="form-control" id="document" type="file" name="document" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.csv" required><div class="form-text">Le fichier est compressé lorsque cela réduit sa taille. Son contenu n’est jamais enregistré dans MySQL.</div></div>
-                <button class="btn btn-primary" type="submit">Ajouter le document</button>
+                <div class="document-file-field"><label class="form-label" for="document">Choisir un fichier</label><div class="document-file-controls"><input class="form-control" id="document" type="file" name="document" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.csv" required><button class="btn btn-primary" type="submit">Ajouter le document</button></div><div class="form-text">Le fichier est compressé lorsque cela réduit sa taille.</div></div>
             </form>
         </section>
 

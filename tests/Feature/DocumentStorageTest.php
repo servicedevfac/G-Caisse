@@ -72,6 +72,8 @@ class DocumentStorageTest extends TestCase
             ->assertOk()
             ->assertSee('budget.csv')
             ->assertSee('Budget partagé du mois de janvier.')
+            ->assertSee('document-file-controls', false)
+            ->assertDontSee('Son contenu n’est jamais enregistré dans MySQL.')
             ->assertSee('Awa')
             ->assertDontSee('Supprimer');
         $this->actingAs($otherUser)->delete(route('documents.destroy', $document))->assertForbidden();
