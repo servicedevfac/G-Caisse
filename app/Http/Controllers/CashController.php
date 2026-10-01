@@ -81,7 +81,8 @@ class CashController
             'totals' => $totals, 'chart' => $chart,
             'paymentChart' => $paymentChart,
             'availableBalance' => max(0, $personalAvailable),
-            'todayCount' => $todayQuery->count(),
+            'todayCount' => (clone $todayQuery)->count(),
+            'todayTransactions' => (clone $todayQuery)->with('user')->orderByDesc('created_at')->orderByDesc('id')->limit(10)->get(),
             'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
         ]);
     }

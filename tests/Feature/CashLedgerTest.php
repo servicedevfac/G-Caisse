@@ -65,6 +65,7 @@ class CashLedgerTest extends TestCase
     }
     public function test_dashboard_renders_for_authenticated_user(): void {
         $user=$this->operator();
+        app(CashLedger::class)->record([...$this->data('approvisionnement', '75'), 'description' => 'Opération du jour visible'], $user);
         $this->actingAs($user)->get('/')
             ->assertOk()
             ->assertSee('Tableau de bord')
@@ -81,6 +82,9 @@ class CashLedgerTest extends TestCase
             ->assertDontSee('typeChart', false)
             ->assertDontSee('Répartition des mouvements')
             ->assertSee('paymentChart', false)
+            ->assertSee('Mes opérations effectuées aujourd’hui')
+            ->assertSee('Opération du jour visible')
+            ->assertSee('Voir tout l’historique')
             ->assertSee('chart.umd.min.js', false)
             ->assertDontSee('Historique commun des opérations')
             ->assertSee('Nouvelle opération')

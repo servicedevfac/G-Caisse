@@ -9,7 +9,7 @@
                 <p class="auth-kicker">RÉCUPÉRATION DU COMPTE</p>
                 <h1>Mot de passe oublié ?</h1>
                 <p class="auth-intro">Saisissez votre adresse e-mail. Nous vous enverrons un lien sécurisé pour choisir un nouveau mot de passe.</p>
-                @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
+                @if(session('status'))<div class="alert alert-success password-reset-message" role="status">{{ session('status') }}</div>@endif
                 @if($errors->any())<div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>@endif
                 <form method="post" action="{{ route('password.email') }}">@csrf
                     <label class="form-label" for="email">Adresse e-mail</label>
