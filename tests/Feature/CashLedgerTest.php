@@ -195,6 +195,7 @@ class CashLedgerTest extends TestCase
         $this->assertSame(2, substr_count($receipt, 'N° ....../......./'.today()->format('Y')));
         $this->assertSame(2, substr_count($receipt, 'class="object-table"'));
         $this->assertStringNotContainsString('Mode de paiement', $receipt);
+        $this->assertStringNotContainsString('Enregistré par', $receipt);
         $this->assertStringNotContainsString('FAC IMMOBILIER', $receipt);
         $this->assertStringContainsString('Imprimerie Centrale', $receipt);
         $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
