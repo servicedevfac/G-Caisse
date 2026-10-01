@@ -30,7 +30,7 @@ class DocumentController
         $file = $data['document'];
         [$contents, $compressed] = $this->compressedContents($file);
         $path = now()->format('Y/m').'/'.Str::uuid().'.bin';
-        $disk = Storage::disk(config('caisse.documents_disk'));
+        $disk = Storage::disk($this->documentsDisk());
 
         abort_unless($disk->put($path, $contents), 500, 'Le document n’a pas pu être stocké.');
 
@@ -54,7 +54,7 @@ class DocumentController
 
     public function download(Document $document)
     {
-        $contents = Storage::disk(config('caisse.documents_disk'))->get($document->storage_path);
+        $contents = Storage::disk($this->documentsDisk())->get($document->storage_path);
         if ($document->is_compressed) {
             $contents = gzdecode($contents);
             abort_if($contents === false, 500, 'Le document stocké est illisible.');
@@ -68,7 +68,7 @@ class DocumentController
     public function destroy(Request $request, Document $document)
     {
         abort_unless($document->canBeDeletedBy($request->user()), 403);
-        Storage::disk(config('caisse.documents_disk'))->delete($document->storage_path);
+        Storage::disk($this->documentsDisk())->delete($document->storage_path);
         $document->delete();
 
         return back()->with('success', 'Document supprimé.');
@@ -85,5 +85,10 @@ class DocumentController
         }
 
         return [$original, false];
+    }
+
+    private function documentsDisk(): string
+    {
+        return config('caisse.documents_disk') ?: config('filesystems.default');
     }
 }

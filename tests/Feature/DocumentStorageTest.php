@@ -16,7 +16,10 @@ class DocumentStorageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['caisse.documents_disk' => 'documents_local']);
+        config([
+            'caisse.documents_disk' => null,
+            'filesystems.default' => 'documents_local',
+        ]);
         Storage::fake('documents_local');
     }
 

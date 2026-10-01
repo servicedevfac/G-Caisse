@@ -33,12 +33,12 @@ Laravel Cloud crée et injecte `APP_KEY`. Ne jamais copier le fichier `.env` loc
 
 ## Stockage des documents
 
-Dans le canvas **Environment**, sélectionner **Add resource**, puis ajouter un espace **Object Storage** privé dans la même région que l'application. Laravel Cloud injecte automatiquement les variables `AWS_*` nécessaires et CaisseFlow utilise alors ce stockage persistant.
+Dans le canvas **Environment**, ajouter un espace **Object Storage** privé dans la même région que l'application. Le connecter sous le nom `private` et le laisser défini comme disque par défaut. Laravel Cloud injecte sa configuration et CaisseFlow utilise automatiquement ce stockage persistant.
 
-Si les identifiants sont ajoutés manuellement, définir aussi :
+Si le bucket n'est pas défini comme disque par défaut, préciser son nom manuellement :
 
 ```dotenv
-DOCUMENTS_DISK=s3
+DOCUMENTS_DISK=nom_du_disque
 ```
 
 Le fichier lui-même reste dans Object Storage. MySQL conserve uniquement son nom, sa taille, son type, son auteur et son chemin privé.
