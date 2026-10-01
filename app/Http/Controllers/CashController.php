@@ -66,8 +66,9 @@ class CashController
             if (!$isGlobalDashboard) $query->where('user_id', $user->id);
             return ['label' => $date->format('d/m'), 'in' => (int) (clone $query)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor') / 100, 'out' => (int) (clone $query)->whereIn('type', ['depense', 'retrait'])->sum('amount_minor') / 100];
         });
-        $globalBalance = CashAccount::findOrFail(1)->balance_minor;
-        $balance = $globalBalance;
+        $balance = CashAccount::findOrFail(1)->balance_minor;
+        $personalAvailable = (int) Transaction::where('user_id', $user->id)->whereNull('cancelled_at')->where('type', 'approvisionnement')->sum('amount_minor')
+            - (int) Transaction::where('user_id', $user->id)->whereNull('cancelled_at')->where('type', 'depense')->sum('amount_minor');
         if (!$isGlobalDashboard) {
             $balanceQuery = Transaction::where('user_id', $user->id)->whereNull('cancelled_at');
             $balance = (int) (clone $balanceQuery)->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor')
@@ -79,7 +80,7 @@ class CashController
             'page' => $page, 'balance' => $balance, 'isGlobalDashboard' => $isGlobalDashboard,
             'totals' => $totals, 'chart' => $chart,
             'paymentChart' => $paymentChart,
-            'availableBalance' => max(0, $globalBalance),
+            'availableBalance' => max(0, $personalAvailable),
             'todayCount' => $todayQuery->count(),
             'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
         ]);

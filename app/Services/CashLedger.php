@@ -22,6 +22,18 @@ class CashLedger
             [$whole, $fraction] = array_pad(explode('.', (string) $data['amount'], 2), 2, '');
             $minor = ((int) $whole * 100) + (int) str_pad($fraction, 2, '0');
             $delta = $data['type'] === 'approvisionnement' ? $minor : -$minor;
+            if ($data['type'] === 'depense') {
+                $availableForUser = (int) Transaction::where('user_id', $user->id)
+                    ->whereNull('cancelled_at')->where('type', 'approvisionnement')->sum('amount_minor')
+                    - (int) Transaction::where('user_id', $user->id)
+                        ->whereNull('cancelled_at')->where('type', 'depense')->sum('amount_minor');
+
+                if ($minor > $availableForUser) {
+                    throw ValidationException::withMessages([
+                        'amount' => 'La dépense ne peut pas dépasser votre solde d’approvisionnements disponible.',
+                    ]);
+                }
+            }
             if ($account->balance_minor + $delta < 0) throw ValidationException::withMessages(['amount' => 'Le solde disponible est insuffisant.']);
             unset($data['amount']);
             $transaction = Transaction::create([...$data, 'amount_minor' => $minor, 'user_id' => $user->id]);
