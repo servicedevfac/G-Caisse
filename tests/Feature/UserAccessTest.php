@@ -238,7 +238,8 @@ class UserAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Journal d’activité')
             ->assertSee('Awa Traoré')
-            ->assertSee('S’est connecté à CaisseFlow.');
+            ->assertSee('S’est connecté à CaisseFlow.')
+            ->assertDontSee('Adresse IP');
 
         $this->actingAs($employee)->get(route('admin.activities.index'))->assertForbidden();
     }
