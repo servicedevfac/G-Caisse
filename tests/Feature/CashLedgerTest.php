@@ -132,17 +132,21 @@ class CashLedgerTest extends TestCase
         $this->assertDatabaseCount('transactions', 0);
     }
 
-    public function test_user_cannot_spend_another_users_funding(): void
+    public function test_user_can_spend_from_shared_cash_balance(): void
     {
         $fundedUser = $this->operator();
         $otherUser = $this->operator();
         app(CashLedger::class)->record($this->data('approvisionnement', '500'), $fundedUser);
 
-        $this->actingAs($otherUser)->post('/operations', $this->data('depense', '1'))
-            ->assertSessionHasErrors('amount');
+        $this->actingAs($otherUser)->get(route('expenses.index'))
+            ->assertOk()
+            ->assertSee('max="500.00"', false);
 
-        $this->assertDatabaseCount('transactions', 1);
-        $this->assertSame(50000, CashAccount::findOrFail(1)->balance_minor);
+        $this->actingAs($otherUser)->post('/operations', $this->data('depense', '90'))
+            ->assertRedirect(route('expenses.index'));
+
+        $this->assertDatabaseCount('transactions', 2);
+        $this->assertSame(41000, CashAccount::findOrFail(1)->balance_minor);
     }
 
     public function test_expense_requires_company_and_beneficiary_and_generates_branded_receipt(): void
