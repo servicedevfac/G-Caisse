@@ -38,11 +38,13 @@ class DocumentStorageTest extends TestCase
         $contents = str_repeat("Procédure de caisse partagée.\n", 1000);
 
         $this->actingAs($user)->post(route('documents.store'), [
+            'description' => 'Procédure interne de gestion de la caisse.',
             'document' => UploadedFile::fake()->createWithContent('procedure-caisse.txt', $contents),
         ])->assertRedirect();
 
         $document = Document::firstOrFail();
         $this->assertSame('procedure-caisse.txt', $document->original_name);
+        $this->assertSame('Procédure interne de gestion de la caisse.', $document->description);
         $this->assertTrue($document->is_compressed);
         $this->assertLessThan($document->original_size, $document->stored_size);
         $this->assertDatabaseMissing('documents', ['storage_path' => $contents]);
@@ -61,6 +63,7 @@ class DocumentStorageTest extends TestCase
         $admin = $this->user(['name' => 'Ben', 'is_admin' => true]);
 
         $this->actingAs($owner)->post(route('documents.store'), [
+            'description' => 'Budget partagé du mois de janvier.',
             'document' => UploadedFile::fake()->createWithContent('budget.csv', "mois,montant\njanvier,100000"),
         ])->assertRedirect();
         $document = Document::firstOrFail();
@@ -68,6 +71,7 @@ class DocumentStorageTest extends TestCase
         $this->actingAs($otherUser)->get(route('documents.index'))
             ->assertOk()
             ->assertSee('budget.csv')
+            ->assertSee('Budget partagé du mois de janvier.')
             ->assertSee('Awa')
             ->assertDontSee('Supprimer');
         $this->actingAs($otherUser)->delete(route('documents.destroy', $document))->assertForbidden();
@@ -83,12 +87,25 @@ class DocumentStorageTest extends TestCase
         $user = $this->user();
 
         $this->actingAs($user)->post(route('documents.store'), [
+            'description' => 'Archive non autorisée.',
             'document' => UploadedFile::fake()->create('archive.exe', 20, 'application/octet-stream'),
         ])->assertSessionHasErrors('document');
 
         $this->actingAs($user)->post(route('documents.store'), [
+            'description' => 'Document trop volumineux.',
             'document' => UploadedFile::fake()->create('trop-grand.pdf', 11000, 'application/pdf'),
         ])->assertSessionHasErrors('document');
+
+        $this->assertDatabaseCount('documents', 0);
+    }
+
+    public function test_document_description_is_required(): void
+    {
+        $user = $this->user();
+
+        $this->actingAs($user)->post(route('documents.store'), [
+            'document' => UploadedFile::fake()->createWithContent('sans-description.txt', 'Contenu'),
+        ])->assertSessionHasErrors('description');
 
         $this->assertDatabaseCount('documents', 0);
     }

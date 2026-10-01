@@ -102,13 +102,30 @@ nav a,
 }
 
 .document-upload-form {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: 18px;
 }
 
+.document-description-field {
+    grid-column: 1 / -1;
+}
+
+.document-description-field textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
 .document-upload-form .btn {
     min-width: 180px;
+}
+
+.document-description {
+    max-width: 520px !important;
+    color: #52655a !important;
+    font-size: 11px !important;
+    line-height: 1.45;
 }
 
 .chart-period-form {
@@ -504,8 +521,12 @@ summary:focus-visible {
     }
 
     .document-upload-form {
+        grid-template-columns: 1fr;
         align-items: stretch;
-        flex-direction: column;
+    }
+
+    .document-description-field {
+        grid-column: 1;
     }
 
     .document-upload-form .btn {

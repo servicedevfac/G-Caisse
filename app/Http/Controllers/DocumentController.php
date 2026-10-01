@@ -21,8 +21,11 @@ class DocumentController
     {
         $max = (int) config('caisse.document_max_kilobytes');
         $data = $request->validate([
+            'description' => ['required', 'string', 'max:1000'],
             'document' => ['required', 'file', 'max:'.$max, 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,txt,csv'],
         ], [
+            'description.required' => 'Décrivez brièvement le contenu ou l’utilité du document.',
+            'description.max' => 'La description ne doit pas dépasser 1 000 caractères.',
             'document.max' => 'Le document ne doit pas dépasser 10 Mo.',
             'document.mimes' => 'Formats acceptés : PDF, Word, Excel, image, texte et CSV.',
         ]);
@@ -37,6 +40,7 @@ class DocumentController
         try {
             Document::create([
                 'user_id' => $request->user()->id,
+                'description' => $data['description'],
                 'original_name' => $file->getClientOriginalName(),
                 'storage_path' => $path,
                 'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
