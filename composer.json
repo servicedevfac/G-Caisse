@@ -3,7 +3,14 @@
   "type": "project",
   "license": "proprietary",
   "description": "Gestion de caisse en français",
-  "require": {"php": "^8.2", "laravel/framework": "^12.0", "laravel/tinker": "^2.10", "barryvdh/laravel-dompdf": "^3.1", "maatwebsite/excel": "^3.1.64"},
+  "require": {
+    "php": "^8.2",
+    "barryvdh/laravel-dompdf": "^3.1",
+    "laravel/framework": "^12.0",
+    "laravel/tinker": "^2.10",
+    "league/flysystem-aws-s3-v3": "^3.0",
+    "maatwebsite/excel": "^3.1.64"
+  },
   "require-dev": {
     "fakerphp/faker": "^1.23",
     "laravel/breeze": "^2.3",

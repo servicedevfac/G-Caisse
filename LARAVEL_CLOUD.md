@@ -2,7 +2,7 @@
 
 ## Réglages de l’environnement
 
-- Dépôt : `khaledopen/Gestion-Caisse`
+- Dépôt : `servicedevfac/G-Caisse`
 - Branche : `main`
 - Runtime : PHP 8.4
 - Build : `composer install --no-dev --prefer-dist --optimize-autoloader`
@@ -18,7 +18,7 @@ Dans le canvas Infrastructure, attacher une base **Laravel MySQL** dans la même
 Variables applicatives recommandées :
 
 ```dotenv
-APP_NAME="Clair — Gestion de caisse"
+APP_NAME="CaisseFlow"
 APP_ENV=production
 APP_DEBUG=false
 APP_LOCALE=fr
@@ -31,12 +31,23 @@ CAISSE_CURRENCY=XOF
 
 Laravel Cloud crée et injecte `APP_KEY`. Ne jamais copier le fichier `.env` local dans Cloud.
 
+## Stockage des documents
+
+Dans le canvas **Environment**, sélectionner **Add resource**, puis ajouter un espace **Object Storage** privé dans la même région que l'application. Laravel Cloud injecte automatiquement les variables `AWS_*` nécessaires et CaisseFlow utilise alors ce stockage persistant.
+
+Si les identifiants sont ajoutés manuellement, définir aussi :
+
+```dotenv
+DOCUMENTS_DISK=s3
+```
+
+Le fichier lui-même reste dans Object Storage. MySQL conserve uniquement son nom, sa taille, son type, son auteur et son chemin privé.
+
 ## Premier administrateur
 
 Après le premier déploiement :
 
-1. Ouvrir `/inscription` et créer le compte responsable.
-2. Dans les commandes de l’environnement Cloud, exécuter :
+Dans les commandes de l’environnement Cloud, exécuter :
 
 ```bash
 php artisan caisse:admin responsable@entreprise.com

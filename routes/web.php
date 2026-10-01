@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\DocumentController;
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/connexion', [AuthenticatedSessionController::class, 'store'])->name('login.store');
@@ -23,6 +24,10 @@ Route::middleware(['auth', 'active', 'audit'])->group(function () {
     Route::get('/mouvements/entrees', [CashController::class, 'entries'])->name('entries.index');
     Route::get('/mouvements/sorties', [CashController::class, 'expenses'])->name('expenses.index');
     Route::get('/mouvements/historique', [CashController::class, 'history'])->name('history.index');
+    Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
+    Route::get('/documents/{document}/telecharger', [DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     Route::post('/operations', [CashController::class, 'store'])->name('transactions.store');
     Route::post('/operations/{transaction}/annuler', [CashController::class, 'cancel'])->name('transactions.cancel');
     Route::get('/operations/{transaction}/recu', [CashController::class, 'receipt'])->name('transactions.receipt');

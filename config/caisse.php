@@ -3,6 +3,8 @@
 return [
     'currency' => env('CAISSE_CURRENCY', 'XOF'),
     'operation_start_date' => '2024-01-01',
+    'documents_disk' => env('DOCUMENTS_DISK', env('AWS_BUCKET') ? 's3' : 'documents_local'),
+    'document_max_kilobytes' => 10240,
     'companies' => [
         'fid' => ['name' => 'FID', 'logo' => 'images/companies/fid.jpeg'],
         'voyage_edifiant' => ['name' => 'VOYAGEDIFIANT', 'logo' => 'images/companies/voyage-edifiant.jpeg'],

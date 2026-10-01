@@ -11,7 +11,7 @@
                 <a class="{{ request()->routeIs('history.*') ? 'active' : '' }}" href="{{ route('history.index') }}">Historique des mouvements</a>
             </div>
         </details>
-        <a class="{{ request()->routeIs('history.*') && request('period') ? 'active' : '' }}" href="{{ route('history.index', ['period' => 'month']) }}"><span>▥</span> Rapports & statistiques</a>
+        <a class="{{ request()->routeIs('documents.*') ? 'active' : '' }}" href="{{ route('documents.index') }}"><span>▤</span> Documents</a>
         @if(auth()->user()->is_admin)
             <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><span>◎</span> Utilisateurs</a>
             <a class="{{ request()->routeIs('admin.activities.*') ? 'active' : '' }}" href="{{ route('admin.activities.index') }}"><span>◷</span> Journal d’activité</a>

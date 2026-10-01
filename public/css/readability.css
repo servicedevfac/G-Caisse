@@ -101,6 +101,16 @@ nav a,
     color: #934d40;
 }
 
+.document-upload-form {
+    display: flex;
+    align-items: end;
+    gap: 18px;
+}
+
+.document-upload-form .btn {
+    min-width: 180px;
+}
+
 .analytics-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -478,5 +488,14 @@ summary:focus-visible {
 
     .date-filters {
         flex-direction: column;
+    }
+
+    .document-upload-form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .document-upload-form .btn {
+        width: 100%;
     }
 }
