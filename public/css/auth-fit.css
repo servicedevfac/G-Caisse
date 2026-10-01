@@ -34,6 +34,11 @@
         padding: 34px 52px;
     }
 
+    .auth-card-login .auth-panel {
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
     .auth-card-register {
         height: min(660px, calc(100vh - 32px));
         min-height: 0;
@@ -58,6 +63,128 @@
     }
 }
 
+@media (min-width: 901px) and (max-height: 720px) {
+    .auth-page {
+        padding: 12px;
+    }
+
+    .auth-card {
+        width: min(920px, 100%);
+        height: calc(100dvh - 24px);
+    }
+
+    .auth-visual {
+        padding: 22px 28px 18px;
+    }
+
+    .auth-brand {
+        font-size: 25px;
+    }
+
+    .auth-brand span {
+        width: 36px;
+        height: 36px;
+        font-size: 21px;
+    }
+
+    .auth-visual-copy {
+        margin-top: 18px;
+    }
+
+    .auth-visual-copy h2 {
+        font-size: 23px;
+    }
+
+    .auth-visual-copy p {
+        margin-top: 7px;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    .wallet-badge {
+        width: 45px;
+        height: 45px;
+        margin-bottom: 10px;
+        font-size: 24px;
+    }
+
+    .cash-illustration {
+        max-height: 145px;
+    }
+
+    .auth-visual-foot {
+        margin-top: 3px;
+        font-size: 11px;
+    }
+
+    .auth-card-login .auth-panel {
+        padding: 18px 42px;
+    }
+
+    .auth-card-login .auth-kicker {
+        margin-bottom: 5px;
+    }
+
+    .auth-card-login .auth-form-card h1 {
+        font-size: 29px;
+    }
+
+    .auth-card-login .auth-intro {
+        margin: 5px 0 12px;
+        font-size: 13px;
+    }
+
+    .auth-card-login .form-label {
+        margin-top: 7px;
+        margin-bottom: 5px;
+    }
+
+    .auth-card-login .auth-input .form-control {
+        height: 44px;
+    }
+
+    .auth-card-login .remember-row {
+        margin: 11px 0;
+        font-size: 13px;
+    }
+
+    .auth-card-login .auth-forgot-link {
+        font-size: 13px;
+    }
+
+    .auth-card-login .auth-submit {
+        min-height: 44px;
+        margin-top: 10px;
+    }
+
+    .auth-card-login .auth-help {
+        margin-top: 9px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .auth-card-login .alert {
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (min-width: 901px) and (max-height: 560px) {
+    .auth-visual-copy p,
+    .auth-visual-foot {
+        display: none;
+    }
+
+    .cash-illustration {
+        max-height: 105px;
+    }
+
+    .auth-card-login .auth-help {
+        display: none;
+    }
+}
+
 @media (max-width: 900px) {
     .auth-page {
         height: auto;
@@ -69,5 +196,9 @@
     .auth-card-register {
         height: auto;
         min-height: 0;
+    }
+
+    .auth-card-login .auth-panel {
+        overflow: visible;
     }
 }

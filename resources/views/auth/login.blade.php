@@ -2,7 +2,7 @@
 @section('title', 'Connexion')
 @section('content')
 <main class="auth-page">
-    <div class="auth-card">
+    <div class="auth-card auth-card-login">
         @include('partials.auth-visual')
         <section class="auth-panel">
             <div class="auth-form-card">
