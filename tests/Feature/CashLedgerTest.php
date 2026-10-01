@@ -115,6 +115,7 @@ class CashLedgerTest extends TestCase
             ->assertOk()
             ->assertSee('Gestion des sorties')
             ->assertSee('Nouvelle dépense')
+            ->assertSee('VOYAGEDIFIANT')
             ->assertSee('Dépense visible')
             ->assertSee('aria-label="Reçu ', false)
             ->assertDontSee('Approvisionnement masqué')
@@ -163,9 +164,9 @@ class CashLedgerTest extends TestCase
         $this->assertSame('FAC IMMOBILIER', $expense->companyName());
         $receipt = view('receipt', ['transaction' => $expense->load('user')])->render();
         $this->assertSame(2, substr_count($receipt, 'BON DE CAISSE'));
-        $this->assertStringContainsString('FAC IMMOBILIER', $receipt);
+        $this->assertStringNotContainsString('FAC IMMOBILIER', $receipt);
         $this->assertStringContainsString('Imprimerie Centrale', $receipt);
-        $this->assertStringContainsString('data:image/jpeg;base64,', $receipt);
+        $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
         $pdf = $this->actingAs($user)->get(route('transactions.receipt', $expense));
         $pdf->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $pdf->getContent());
