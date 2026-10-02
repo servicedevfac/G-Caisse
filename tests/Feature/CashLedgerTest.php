@@ -4,6 +4,8 @@ use App\Exports\TransactionsExport;
 use App\Models\{CashAccount, Transaction, User};
 use App\Services\CashLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -240,6 +242,36 @@ class CashLedgerTest extends TestCase
         $this->assertSame('VOYAGEDIFIANT', $funding->companyName());
         $receipt = view('receipt', ['transaction' => $funding->load('user')])->render();
         $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
+    }
+
+    public function test_optional_operation_document_is_downloadable_only_when_attached(): void
+    {
+        config(['caisse.documents_disk' => null, 'filesystems.default' => 'documents_local']);
+        Storage::fake('documents_local');
+        $user = $this->operator();
+        $contents = str_repeat("Justificatif de l’opération.\n", 300);
+
+        $this->actingAs($user)->post('/operations', [
+            ...$this->data('approvisionnement', '200'),
+            'attachment' => UploadedFile::fake()->createWithContent('justificatif.txt', $contents),
+        ])->assertRedirect(route('entries.index'));
+        $attached = Transaction::firstOrFail();
+        $this->assertSame('justificatif.txt', $attached->attachment_original_name);
+        Storage::disk('documents_local')->assertExists($attached->attachment_path);
+
+        $this->actingAs($user)->post('/operations', $this->data('approvisionnement', '50'))
+            ->assertRedirect(route('entries.index'));
+        $withoutAttachment = Transaction::latest('id')->firstOrFail();
+
+        $this->actingAs($user)->get(route('history.index'))
+            ->assertOk()
+            ->assertSee(route('transactions.attachment', $attached), false)
+            ->assertDontSee(route('transactions.attachment', $withoutAttachment), false);
+        $this->actingAs($user)->get(route('transactions.attachment', $attached))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+            ->assertContent($contents);
+        $this->actingAs($user)->get(route('transactions.attachment', $withoutAttachment))->assertNotFound();
     }
 
     public function test_reports_exclude_cancelled_operations_and_status_columns(): void

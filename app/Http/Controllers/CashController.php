@@ -1,9 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\{CashAccount, Transaction};
-use App\Services\CashLedger;
+use App\Services\{CashLedger, PrivateFileStorage};
 use App\Exports\TransactionsExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -119,7 +120,7 @@ class CashController
             ];
         });
     }
-    public function store(Request $request, CashLedger $ledger) {
+    public function store(Request $request, CashLedger $ledger, PrivateFileStorage $storage) {
         $data = $request->validate([
             'request_key' => 'required|uuid', 'type' => ['required', Rule::in(array_keys(Transaction::OPERATION_TYPES))],
             'amount' => ['required', 'regex:/^\d{1,10}(\.\d{1,2})?$/', 'numeric', 'min:0.01', 'max:9999999999.99'],
@@ -127,16 +128,43 @@ class CashController
             'company' => ['required', Rule::in(array_keys(config('caisse.companies')))],
             'beneficiary' => ['nullable', 'required_if:type,depense', 'string', 'max:255'],
             'description' => 'required|string|max:255', 'justification' => 'nullable|string|max:5000',
+            'attachment' => ['nullable', 'file', 'max:'.config('caisse.document_max_kilobytes'), 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg,txt,csv'],
             'occurred_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.config('caisse.operation_start_date'), 'before_or_equal:today'],
             'source' => 'nullable|in:dashboard',
         ], [
             'company.required' => 'Sélectionnez l’entreprise concernée.',
+            'attachment.max' => 'Le document associé ne doit pas dépasser 10 Mo.',
+            'attachment.mimes' => 'Formats acceptés : PDF, Word, Excel, image, texte et CSV.',
             'occurred_on.after_or_equal' => 'La date de l’opération doit être égale ou postérieure au 1er janvier 2024.',
             'occurred_on.before_or_equal' => 'La date de l’opération ne peut pas être postérieure à aujourd’hui.',
         ]);
         $source = $data['source'] ?? null;
-        unset($data['source']);
-        $transaction = $ledger->record($data, $request->user());
+        $attachment = $data['attachment'] ?? null;
+        unset($data['source'], $data['attachment']);
+        $stored = $attachment ? $storage->store($attachment, 'operations') : null;
+        $storedWasUsed = false;
+
+        try {
+            $transaction = DB::transaction(function () use ($ledger, $data, $request, $stored, &$storedWasUsed) {
+                $transaction = $ledger->record($data, $request->user());
+                if ($stored && !$transaction->attachment_path) {
+                    $transaction->update([
+                        'attachment_original_name' => $stored['original_name'],
+                        'attachment_path' => $stored['path'],
+                        'attachment_mime_type' => $stored['mime_type'],
+                        'attachment_original_size' => $stored['original_size'],
+                        'attachment_stored_size' => $stored['stored_size'],
+                        'attachment_is_compressed' => $stored['is_compressed'],
+                    ]);
+                    $storedWasUsed = true;
+                }
+                return $transaction;
+            }, 3);
+        } catch (\Throwable $exception) {
+            if ($stored) $storage->delete($stored['path']);
+            throw $exception;
+        }
+        if ($stored && !$storedWasUsed) $storage->delete($stored['path']);
         $destination = $source === 'dashboard'
             ? 'dashboard'
             : ($transaction->type === 'approvisionnement' ? 'entries.index' : 'expenses.index');
@@ -151,6 +179,14 @@ class CashController
     public function receipt(Transaction $transaction) {
         $transaction->loadMissing('user', 'canceller');
         return Pdf::loadView('receipt', compact('transaction'))->setPaper('a4')->download($transaction->reference.'.pdf');
+    }
+    public function attachment(Transaction $transaction, PrivateFileStorage $storage) {
+        abort_unless($transaction->attachment_path, 404);
+        $contents = $storage->contents($transaction->attachment_path, $transaction->attachment_is_compressed);
+        $filename = str_replace(["\r", "\n"], '', $transaction->attachment_original_name);
+        return response($contents)
+            ->header('Content-Type', $transaction->attachment_mime_type ?: 'application/octet-stream')
+            ->header('Content-Disposition', 'attachment; filename="'.addcslashes($filename, '"\\').'"');
     }
     public function export(Request $request, string $format) {
         abort_unless(in_array($format, ['pdf', 'xlsx']), 404);

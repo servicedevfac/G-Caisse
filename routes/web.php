@@ -31,6 +31,7 @@ Route::middleware(['auth', 'active', 'audit'])->group(function () {
     Route::post('/operations', [CashController::class, 'store'])->name('transactions.store');
     Route::post('/operations/{transaction}/annuler', [CashController::class, 'cancel'])->name('transactions.cancel');
     Route::get('/operations/{transaction}/recu', [CashController::class, 'receipt'])->name('transactions.receipt');
+    Route::get('/operations/{transaction}/document', [CashController::class, 'attachment'])->name('transactions.attachment');
     Route::get('/rapports/{format}', [CashController::class, 'export'])->name('reports.export');
     Route::middleware('admin')->prefix('administration')->name('admin.')->group(function () {
         Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');

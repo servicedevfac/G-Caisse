@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Services\PrivateFileStorage;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class DocumentController
 {
@@ -17,7 +15,7 @@ class DocumentController
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, PrivateFileStorage $storage)
     {
         $max = (int) config('caisse.document_max_kilobytes');
         $data = $request->validate([
@@ -31,68 +29,43 @@ class DocumentController
         ]);
 
         $file = $data['document'];
-        [$contents, $compressed] = $this->compressedContents($file);
-        $path = now()->format('Y/m').'/'.Str::uuid().'.bin';
-        $disk = Storage::disk($this->documentsDisk());
-
-        abort_unless($disk->put($path, $contents), 500, 'Le document n’a pas pu être stocké.');
+        $stored = $storage->store($file, 'documents');
 
         try {
             Document::create([
                 'user_id' => $request->user()->id,
                 'description' => $data['description'],
                 'original_name' => $file->getClientOriginalName(),
-                'storage_path' => $path,
-                'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
-                'original_size' => $file->getSize(),
-                'stored_size' => strlen($contents),
-                'is_compressed' => $compressed,
+                'storage_path' => $stored['path'],
+                'mime_type' => $stored['mime_type'],
+                'original_size' => $stored['original_size'],
+                'stored_size' => $stored['stored_size'],
+                'is_compressed' => $stored['is_compressed'],
             ]);
         } catch (\Throwable $exception) {
-            $disk->delete($path);
+            $storage->delete($stored['path']);
             throw $exception;
         }
 
         return back()->with('success', 'Document ajouté à l’espace de stockage.');
     }
 
-    public function download(Document $document)
+    public function download(Document $document, PrivateFileStorage $storage)
     {
-        $contents = Storage::disk($this->documentsDisk())->get($document->storage_path);
-        if ($document->is_compressed) {
-            $contents = gzdecode($contents);
-            abort_if($contents === false, 500, 'Le document stocké est illisible.');
-        }
+        $contents = $storage->contents($document->storage_path, $document->is_compressed);
 
         return response($contents)
             ->header('Content-Type', $document->mime_type)
             ->header('Content-Disposition', 'attachment; filename="'.addcslashes($document->original_name, '"\\').'"');
     }
 
-    public function destroy(Request $request, Document $document)
+    public function destroy(Request $request, Document $document, PrivateFileStorage $storage)
     {
         abort_unless($document->canBeDeletedBy($request->user()), 403);
-        Storage::disk($this->documentsDisk())->delete($document->storage_path);
+        $storage->delete($document->storage_path);
         $document->delete();
 
         return back()->with('success', 'Document supprimé.');
     }
 
-    private function compressedContents(UploadedFile $file): array
-    {
-        $original = file_get_contents($file->getRealPath());
-        abort_if($original === false, 422, 'Le document est illisible.');
-
-        $compressed = gzencode($original, 9);
-        if ($compressed !== false && strlen($compressed) < strlen($original)) {
-            return [$compressed, true];
-        }
-
-        return [$original, false];
-    }
-
-    private function documentsDisk(): string
-    {
-        return config('caisse.documents_disk') ?: config('filesystems.default');
-    }
 }

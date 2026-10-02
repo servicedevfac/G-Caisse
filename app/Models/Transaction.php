@@ -7,7 +7,7 @@ class Transaction extends Model
     public const OPERATION_TYPES = ['approvisionnement' => 'Approvisionnement', 'depense' => 'Dépense'];
     public const METHODS = ['especes' => 'Espèces', 'mobile_money' => 'Mobile Money', 'virement' => 'Virement'];
     protected $guarded = [];
-    protected function casts(): array { return ['amount_minor' => 'integer', 'occurred_on' => 'date', 'cancelled_at' => 'datetime']; }
+    protected function casts(): array { return ['amount_minor' => 'integer', 'occurred_on' => 'date', 'cancelled_at' => 'datetime', 'attachment_original_size' => 'integer', 'attachment_stored_size' => 'integer', 'attachment_is_compressed' => 'boolean']; }
     public function user() { return $this->belongsTo(User::class); }
     public function canceller() { return $this->belongsTo(User::class, 'cancelled_by'); }
     public function isInflow(): bool { return in_array($this->type, ['recette', 'approvisionnement'], true); }

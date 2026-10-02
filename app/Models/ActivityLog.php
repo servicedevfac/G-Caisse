@@ -19,6 +19,7 @@ class ActivityLog extends Model
         'create_transaction' => 'Opération créée',
         'cancel_transaction' => 'Opération annulée',
         'download_receipt' => 'Reçu téléchargé',
+        'download_attachment' => 'Pièce jointe téléchargée',
         'export_report' => 'Rapport exporté',
         'view_documents' => 'Documents consultés',
         'upload_document' => 'Document ajouté',

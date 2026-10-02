@@ -25,6 +25,7 @@ class LogUserActivity
             'transactions.store' => ['create_transaction', 'A enregistré une '.($request->input('type') === 'depense' ? 'dépense' : 'entrée').' de '.$request->input('amount').' '.config('caisse.currency').'.'],
             'transactions.cancel' => ['cancel_transaction', 'A annulé l’opération '.$request->route('transaction')->reference.'.'],
             'transactions.receipt' => ['download_receipt', 'A téléchargé le reçu '.$request->route('transaction')->reference.'.'],
+            'transactions.attachment' => ['download_attachment', 'A téléchargé le document associé à l’opération '.$request->route('transaction')->reference.'.'],
             'reports.export' => ['export_report', 'A exporté un rapport au format '.strtoupper((string) $request->route('format')).'.'],
             'documents.index' => ['view_documents', 'A consulté l’espace Documents.'],
             'documents.store' => ['upload_document', 'A ajouté le document '.$request->file('document')?->getClientOriginalName().'.'],
