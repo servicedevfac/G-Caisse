@@ -12,7 +12,7 @@ Choisir un nouveau mot de passe
 </x-mail::button>
 
 <x-mail::panel>
-Pour votre sécurité, ce lien est valable pendant **{{ $expiration }} minutes** et ne peut être utilisé qu’une seule fois.
+Pour votre sécurité, ce lien est valable pendant **1 heure** et ne peut être utilisé qu’une seule fois.
 </x-mail::panel>
 
 Si vous n’êtes pas à l’origine de cette demande, ignorez simplement ce message. Votre mot de passe actuel reste inchangé.

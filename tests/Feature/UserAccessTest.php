@@ -111,6 +111,41 @@ class UserAccessTest extends TestCase
         $this->assertTrue(Hash::check('Nouv1234', $user->fresh()->password));
     }
 
+    public function test_password_reset_link_expires_after_one_hour(): void
+    {
+        Notification::fake();
+        $user = $this->user(['email' => 'expiration@entreprise.test', 'password' => 'AncienMotDePasse123']);
+
+        $this->post(route('password.email'), ['email' => $user->email])->assertSessionHas('status');
+        $token = null;
+        Notification::assertSentTo($user, ResetPasswordNotification::class, function ($notification) use (&$token) {
+            $token = $notification->token;
+            return true;
+        });
+
+        $this->assertSame(60, config('auth.passwords.users.expire'));
+        $this->travel(59)->minutes();
+        $this->get(route('password.reset', ['token' => $token, 'email' => $user->email]))
+            ->assertOk()
+            ->assertSee('Nouveau mot de passe');
+
+        $this->travel(2)->minutes();
+
+        $this->get(route('password.reset', ['token' => $token, 'email' => $user->email]))
+            ->assertRedirect(route('password.request'))
+            ->assertSessionHasErrors(['email' => 'Ce lien de réinitialisation a expiré. Demandez un nouveau lien pour modifier votre mot de passe.']);
+
+        $this->post(route('password.update'), [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'Nouv1234',
+            'password_confirmation' => 'Nouv1234',
+        ])->assertRedirect(route('password.request'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertTrue(Hash::check('AncienMotDePasse123', $user->fresh()->password));
+    }
+
     public function test_invitation_email_template_can_be_rendered(): void
     {
         config(['mail.default' => 'array']);
