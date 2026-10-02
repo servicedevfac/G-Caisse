@@ -178,7 +178,12 @@ class CashController
     }
     public function receipt(Transaction $transaction) {
         $transaction->loadMissing('user', 'canceller');
-        return Pdf::loadView('receipt', compact('transaction'))->setPaper('a4')->download($transaction->reference.'.pdf');
+        $receiptTransactions = collect([$transaction]);
+        $previousTransaction = $transaction->previousInHistory();
+        if ($previousTransaction) {
+            $receiptTransactions->push($previousTransaction->loadMissing('user', 'canceller'));
+        }
+        return Pdf::loadView('receipt', compact('transaction', 'receiptTransactions'))->setPaper('a4')->download($transaction->reference.'.pdf');
     }
     public function attachment(Transaction $transaction, PrivateFileStorage $storage) {
         abort_unless($transaction->attachment_path, 404);

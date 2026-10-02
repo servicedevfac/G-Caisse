@@ -212,7 +212,13 @@ class CashLedgerTest extends TestCase
 
         $expense = Transaction::where('type', 'depense')->firstOrFail();
         $this->assertSame('FAC IMMOBILIER', $expense->companyName());
-        $receipt = view('receipt', ['transaction' => $expense->load('user')])->render();
+        $previous = $expense->previousInHistory();
+        $this->assertNotNull($previous);
+        $this->assertSame('fid', $previous->company);
+        $receipt = view('receipt', [
+            'transaction' => $expense->load('user'),
+            'receiptTransactions' => collect([$expense, $previous]),
+        ])->render();
         $this->assertSame(2, substr_count($receipt, 'BON DE CAISSE'));
         $this->assertSame(2, substr_count($receipt, 'N° ....../......./'.today()->format('Y')));
         $this->assertSame(2, substr_count($receipt, 'class="object-table"'));
@@ -220,7 +226,11 @@ class CashLedgerTest extends TestCase
         $this->assertStringNotContainsString('Enregistré par', $receipt);
         $this->assertStringNotContainsString('FAC IMMOBILIER', $receipt);
         $this->assertStringContainsString('Imprimerie Centrale', $receipt);
+        $this->assertStringContainsString('25,00 XOF', $receipt);
+        $this->assertStringContainsString('500,00 XOF', $receipt);
         $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
+        $this->assertSame(2, substr_count($receipt, base64_encode(file_get_contents(public_path('images/companies/fac-immobilier.jpeg')))));
+        $this->assertSame(2, substr_count($receipt, base64_encode(file_get_contents(public_path('images/companies/fid.jpeg')))));
         $pdf = $this->actingAs($user)->get(route('transactions.receipt', $expense));
         $pdf->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $pdf->getContent());
@@ -241,7 +251,8 @@ class CashLedgerTest extends TestCase
         $funding = Transaction::where('type', 'approvisionnement')->firstOrFail();
         $this->assertSame('VOYAGEDIFIANT', $funding->companyName());
         $receipt = view('receipt', ['transaction' => $funding->load('user')])->render();
-        $this->assertSame(4, substr_count($receipt, 'data:image/jpeg;base64,'));
+        $this->assertSame(1, substr_count($receipt, 'BON DE CAISSE'));
+        $this->assertSame(2, substr_count($receipt, 'data:image/jpeg;base64,'));
     }
 
     public function test_optional_operation_document_is_downloadable_only_when_attached(): void
