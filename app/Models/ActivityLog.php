@@ -17,6 +17,7 @@ class ActivityLog extends Model
         'view_expenses' => 'Dépenses consultées',
         'view_history' => 'Historique consulté',
         'create_transaction' => 'Opération créée',
+        'sign_transaction' => 'Opération signée',
         'cancel_transaction' => 'Opération annulée',
         'download_receipt' => 'Reçu téléchargé',
         'download_attachment' => 'Pièce jointe téléchargée',

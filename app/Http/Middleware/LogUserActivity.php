@@ -23,6 +23,7 @@ class LogUserActivity
             'expenses.index' => ['view_expenses', 'A consulté la gestion des sorties.'],
             'history.index' => ['view_history', 'A consulté l’historique des mouvements.'],
             'transactions.store' => ['create_transaction', 'A enregistré une '.($request->input('type') === 'depense' ? 'dépense' : 'entrée').' de '.$request->input('amount').' '.config('caisse.currency').'.'],
+            'transactions.sign' => ['sign_transaction', 'A signé l’opération '.$request->route('transaction')->reference.'.'],
             'transactions.cancel' => ['cancel_transaction', 'A annulé l’opération '.$request->route('transaction')->reference.'.'],
             'transactions.receipt' => ['download_receipt', 'A téléchargé le reçu '.$request->route('transaction')->reference.'.'],
             'transactions.attachment' => ['download_attachment', 'A téléchargé le document associé à l’opération '.$request->route('transaction')->reference.'.'],

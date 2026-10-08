@@ -82,7 +82,7 @@ class CashController
             'availableBalance' => max(0, $personalAvailable),
             'todayCount' => (clone $todayQuery)->count(),
             'todayTransactions' => (clone $todayQuery)->with('user')->orderByDesc('created_at')->orderByDesc('id')->limit(10)->get(),
-            'transactions' => $historyQuery->with('user', 'canceller')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
+            'transactions' => $historyQuery->with('user', 'canceller', 'signer')->orderByDesc('occurred_on')->orderByDesc('id')->paginate(12)->withQueryString(),
         ]);
     }
     private function forChartPeriod($query, string $period) {
@@ -176,12 +176,24 @@ class CashController
         $ledger->cancel($transaction, $data['cancellation_reason'], $request->user());
         return back()->with('success', 'Opération annulée. Le solde a été recalculé.');
     }
+    public function sign(Request $request, Transaction $transaction) {
+        DB::transaction(function () use ($request, $transaction) {
+            $lockedTransaction = Transaction::query()->lockForUpdate()->findOrFail($transaction->id);
+            abort_if($lockedTransaction->signed_at, 409, 'Cette opération est déjà signée.');
+            $lockedTransaction->update([
+                'signed_at' => now(),
+                'signed_by' => $request->user()->id,
+            ]);
+        }, 3);
+
+        return back()->with('success', 'Opération '.$transaction->reference.' signée définitivement.');
+    }
     public function receipt(Transaction $transaction) {
-        $transaction->loadMissing('user', 'canceller');
+        $transaction->loadMissing('user', 'canceller', 'signer');
         $receiptTransactions = collect([$transaction]);
         $previousTransaction = $transaction->previousInHistory();
         if ($previousTransaction) {
-            $receiptTransactions->push($previousTransaction->loadMissing('user', 'canceller'));
+            $receiptTransactions->push($previousTransaction->loadMissing('user', 'canceller', 'signer'));
         }
         return Pdf::loadView('receipt', compact('transaction', 'receiptTransactions'))->setPaper('a4')->download($transaction->reference.'.pdf');
     }

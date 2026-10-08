@@ -29,6 +29,7 @@ Route::middleware(['auth', 'active', 'audit'])->group(function () {
     Route::get('/documents/{document}/telecharger', [DocumentController::class, 'download'])->name('documents.download');
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     Route::post('/operations', [CashController::class, 'store'])->name('transactions.store');
+    Route::patch('/operations/{transaction}/signer', [CashController::class, 'sign'])->name('transactions.sign');
     Route::post('/operations/{transaction}/annuler', [CashController::class, 'cancel'])->name('transactions.cancel');
     Route::get('/operations/{transaction}/recu', [CashController::class, 'receipt'])->name('transactions.receipt');
     Route::get('/operations/{transaction}/document', [CashController::class, 'attachment'])->name('transactions.attachment');

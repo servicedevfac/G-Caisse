@@ -37,6 +37,44 @@ class CashLedgerTest extends TestCase
         $this->assertNotNull($t->fresh()->cancelled_at); $this->assertSame($user->id,$t->fresh()->cancelled_by);
         $this->expectException(ValidationException::class); $ledger->cancel($t,'Deuxième annulation',$user);
     }
+    public function test_operation_can_be_signed_only_once_and_receipt_shows_signature(): void
+    {
+        $user = $this->operator();
+        $transaction = app(CashLedger::class)->record($this->data(), $user);
+        $signUrl = route('transactions.sign', $transaction);
+
+        $this->actingAs($user)->get(route('history.index'))
+            ->assertOk()
+            ->assertSee('Non signé')
+            ->assertSee($signUrl, false);
+
+        $this->actingAs($user)->patch($signUrl)
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Opération '.$transaction->reference.' signée définitivement.');
+
+        $signed = $transaction->fresh();
+        $this->assertNotNull($signed->signed_at);
+        $this->assertSame($user->id, $signed->signed_by);
+        $this->assertDatabaseHas('activity_logs', [
+            'user_id' => $user->id,
+            'action' => 'sign_transaction',
+            'subject_type' => Transaction::class,
+            'subject_id' => $transaction->id,
+        ]);
+
+        $this->actingAs($user)->get(route('history.index'))
+            ->assertOk()
+            ->assertSee('✓ Signé')
+            ->assertSee('signature-complete', false)
+            ->assertDontSee('<form class="operation-sign-form" method="post" action="'.$signUrl.'">', false);
+
+        $this->actingAs($user)->patch($signUrl)->assertStatus(409);
+        $this->assertSame($signed->signed_at->toISOString(), $transaction->fresh()->signed_at->toISOString());
+
+        $receipt = view('receipt', ['transaction' => $transaction->fresh()->load('signer')])->render();
+        $this->assertStringContainsString('✓ SIGNÉ le ', $receipt);
+        $this->assertStringContainsString($user->name, $receipt);
+    }
     public function test_cannot_cancel_funds_already_spent(): void {
         $user=$this->operator(); $ledger=app(CashLedger::class); $t=$ledger->record($this->data(),$user);
         $ledger->record($this->data('depense','80'),$user);
