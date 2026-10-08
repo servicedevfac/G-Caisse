@@ -40,8 +40,15 @@ class CashLedgerTest extends TestCase
     public function test_operation_can_be_signed_only_once_and_receipt_shows_signature(): void
     {
         $user = $this->operator();
+        $otherUser = $this->operator();
         $transaction = app(CashLedger::class)->record($this->data(), $user);
         $signUrl = route('transactions.sign', $transaction);
+
+        $this->actingAs($otherUser)->get(route('history.index'))
+            ->assertOk()
+            ->assertDontSee($signUrl, false);
+        $this->actingAs($otherUser)->patch($signUrl)->assertForbidden();
+        $this->assertNull($transaction->fresh()->signed_at);
 
         $this->actingAs($user)->get(route('history.index'))
             ->assertOk()
@@ -71,9 +78,10 @@ class CashLedgerTest extends TestCase
         $this->actingAs($user)->patch($signUrl)->assertStatus(409);
         $this->assertSame($signed->signed_at->toISOString(), $transaction->fresh()->signed_at->toISOString());
 
-        $receipt = view('receipt', ['transaction' => $transaction->fresh()->load('signer')])->render();
-        $this->assertStringContainsString('✓ SIGNÉ le ', $receipt);
-        $this->assertStringContainsString($user->name, $receipt);
+        $receipt = view('receipt', ['transaction' => $transaction->fresh()])->render();
+        $this->assertStringContainsString('✓ SIGNÉ le '.$signed->signed_at->format('d/m/Y'), $receipt);
+        $this->assertStringNotContainsString('✓ SIGNÉ le '.$signed->signed_at->format('d/m/Y à H:i'), $receipt);
+        $this->assertStringNotContainsString('par '.$user->name, $receipt);
     }
     public function test_cannot_cancel_funds_already_spent(): void {
         $user=$this->operator(); $ledger=app(CashLedger::class); $t=$ledger->record($this->data(),$user);

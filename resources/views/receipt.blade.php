@@ -16,7 +16,7 @@
 <section class="voucher voucher-copy-{{ $loop->iteration }}">
 <table class="top"><tr><td>@if($logo)<img class="logo" src="{{ $logo }}" alt="Logo">@endif</td><td><div class="title">BON DE CAISSE</div></td><td>@if($logo)<img class="logo" src="{{ $logo }}" alt="Logo">@endif</td></tr></table>
 <div class="number"><strong>N° ....../......./{{ $voucherTransaction->occurred_on->format('Y') }}</strong><br>Date : {{ $voucherTransaction->occurred_on->format('d/m/Y') }}</div>
-@if($voucherTransaction->signed_at)<div class="signed-note">✓ SIGNÉ le {{ $voucherTransaction->signed_at->format('d/m/Y à H:i') }}{{ $voucherTransaction->signer ? ' par '.$voucherTransaction->signer->name : '' }}</div>@endif
+@if($voucherTransaction->signed_at)<div class="signed-note">✓ SIGNÉ le {{ $voucherTransaction->signed_at->format('d/m/Y') }}</div>@endif
 @if($voucherTransaction->cancelled_at)<div class="cancelled">ANNULÉ</div>@endif
 <table class="details"><tr><td class="label">Bénéficiaire :</td><td class="value">{{ $voucherTransaction->beneficiary ?: '—' }}</td></tr><tr><td class="label">MONTANT :</td><td class="value amount">{{ $amount }}</td></tr></table>
 <table class="object-table"><tr><td class="object-label">OBJET :</td><td class="object-line">{{ $voucherTransaction->description }}</td></tr><tr><td></td><td class="object-line">{{ $voucherTransaction->justification ?: ' ' }}</td></tr><tr><td></td><td class="object-line">&nbsp;</td></tr></table>
