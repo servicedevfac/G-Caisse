@@ -13,7 +13,7 @@ class Transaction extends Model
     public function signer() { return $this->belongsTo(User::class, 'signed_by'); }
     public function isInflow(): bool { return in_array($this->type, ['recette', 'approvisionnement'], true); }
     public function canBeCancelled(): bool { return !$this->cancelled_at && $this->created_at->gte(now()->subDays(7)); }
-    public function canBeCancelledBy(User $user): bool { return $user->is_admin || $this->user_id === $user->id; }
+    public function canBeCancelledBy(User $user): bool { return !$user->is_admin && $this->user_id === $user->id; }
     public function companyName(): ?string { return $this->company ? config('caisse.companies.'.$this->company.'.name') : null; }
     public function companyLogoPath(): ?string { return $this->company ? config('caisse.companies.'.$this->company.'.logo') : null; }
     public function previousInHistory(): ?self

@@ -218,7 +218,7 @@ class CashLedgerTest extends TestCase
         $this->assertSame(50000, CashAccount::findOrFail(1)->balance_minor);
     }
 
-    public function test_only_creator_or_admin_can_cancel_an_operation(): void
+    public function test_only_creator_can_cancel_an_operation(): void
     {
         $creator = $this->operator();
         $otherUser = $this->operator();
@@ -235,10 +235,11 @@ class CashLedgerTest extends TestCase
 
         $this->actingAs($admin)->get(route('history.index'))
             ->assertOk()
-            ->assertSee('data-action="'.$cancelUrl.'"', false);
+            ->assertDontSee('data-action="'.$cancelUrl.'"', false)
+            ->assertSee('aria-label="Reçu '.$transaction->reference.'"', false);
         $this->actingAs($admin)->post($cancelUrl, ['cancellation_reason' => 'Annulation administrateur'])
-            ->assertRedirect();
-        $this->assertSame($admin->id, $transaction->fresh()->cancelled_by);
+            ->assertForbidden();
+        $this->assertNull($transaction->fresh()->cancelled_by);
     }
 
     public function test_expense_requires_company_and_beneficiary_and_generates_branded_receipt(): void
