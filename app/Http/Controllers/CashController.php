@@ -50,8 +50,8 @@ class CashController
         $user = $request->user();
         $isGlobalDashboard = $user->is_admin;
         $historyQuery = $this->filtered($request);
+        if (!$isGlobalDashboard) $historyQuery->where('user_id', $user->id);
         $metricsQuery = clone $historyQuery;
-        if (!$isGlobalDashboard) $metricsQuery->where('user_id', $user->id);
         $active = (clone $metricsQuery)->whereNull('cancelled_at');
         $totals = [];
         foreach (array_keys(Transaction::TYPES) as $type) $totals[$type] = (int) (clone $active)->where('type', $type)->sum('amount_minor');
@@ -190,16 +190,21 @@ class CashController
 
         return back()->with('success', 'Opération '.$transaction->reference.' signée définitivement.');
     }
-    public function receipt(Transaction $transaction) {
+    private function authorizeTransactionAccess(Request $request, Transaction $transaction): void {
+        abort_unless($request->user()->is_admin || $transaction->user_id === $request->user()->id, 403);
+    }
+    public function receipt(Request $request, Transaction $transaction) {
+        $this->authorizeTransactionAccess($request, $transaction);
         $transaction->loadMissing('user', 'canceller');
         $receiptTransactions = collect([$transaction]);
-        $previousTransaction = $transaction->previousInHistory();
+        $previousTransaction = $transaction->previousInHistory($request->user()->is_admin ? null : $request->user()->id);
         if ($previousTransaction) {
             $receiptTransactions->push($previousTransaction->loadMissing('user', 'canceller'));
         }
         return Pdf::loadView('receipt', compact('transaction', 'receiptTransactions'))->setPaper('a4')->download($transaction->reference.'.pdf');
     }
-    public function attachment(Transaction $transaction, PrivateFileStorage $storage) {
+    public function attachment(Request $request, Transaction $transaction, PrivateFileStorage $storage) {
+        $this->authorizeTransactionAccess($request, $transaction);
         abort_unless($transaction->attachment_path, 404);
         $contents = $storage->contents($transaction->attachment_path, $transaction->attachment_is_compressed);
         $filename = str_replace(["\r", "\n"], '', $transaction->attachment_original_name);
@@ -211,6 +216,7 @@ class CashController
         abort_unless(in_array($format, ['pdf', 'xlsx']), 404);
         $request->merge(['status' => 'active']);
         $query = $this->filtered($request)->orderBy('occurred_on')->orderBy('id');
+        if (!$request->user()->is_admin) $query->where('user_id', $request->user()->id);
         if ((clone $query)->count() > 5000) return back()->withErrors(['export' => 'Limitez la période à 5 000 opérations maximum.']);
         $transactions = $query->get();
         return $format === 'xlsx' ? Excel::download(new TransactionsExport($transactions), 'rapport-caisse.xlsx') : Pdf::loadView('report', compact('transactions'))->setPaper('a4', 'landscape')->download('rapport-caisse.pdf');

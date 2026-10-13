@@ -16,16 +16,19 @@ class Transaction extends Model
     public function canBeCancelledBy(User $user): bool { return !$user->is_admin && $this->user_id === $user->id; }
     public function companyName(): ?string { return $this->company ? config('caisse.companies.'.$this->company.'.name') : null; }
     public function companyLogoPath(): ?string { return $this->company ? config('caisse.companies.'.$this->company.'.logo') : null; }
-    public function previousInHistory(): ?self
+    public function previousInHistory(?int $userId = null): ?self
     {
-        return self::query()
+        $query = self::query()
+            ->when($userId, fn ($query) => $query->where('user_id', $userId))
             ->where(function ($query) {
                 $query->whereDate('occurred_on', '<', $this->occurred_on->toDateString())
                     ->orWhere(function ($sameDay) {
                         $sameDay->whereDate('occurred_on', $this->occurred_on->toDateString())
                             ->where('id', '<', $this->id);
                     });
-            })
+            });
+
+        return $query
             ->orderByDesc('occurred_on')
             ->orderByDesc('id')
             ->first();

@@ -34,7 +34,6 @@ class CashLedger
                     ]);
                 }
             }
-            if ($account->balance_minor + $delta < 0) throw ValidationException::withMessages(['amount' => 'Le solde disponible est insuffisant.']);
             unset($data['amount']);
             $transaction = Transaction::create([...$data, 'amount_minor' => $minor, 'user_id' => $user->id]);
             $account->update(['balance_minor' => $account->balance_minor + $delta]);
@@ -49,7 +48,11 @@ class CashLedger
             if ($entry->cancelled_at) throw ValidationException::withMessages(['cancel' => 'Cette opération est déjà annulée.']);
             if ($entry->created_at->lt(now()->subDays(7))) throw ValidationException::withMessages(['cancel' => 'Le délai de 7 jours pour annuler cette opération est dépassé.']);
             $delta = $entry->isInflow() ? -$entry->amount_minor : $entry->amount_minor;
-            if ($account->balance_minor + $delta < 0) throw ValidationException::withMessages(['cancel' => 'Annulation impossible : les fonds ont déjà été utilisés.']);
+            $availableForUser = (int) Transaction::where('user_id', $entry->user_id)
+                ->whereNull('cancelled_at')->whereIn('type', ['recette', 'approvisionnement'])->sum('amount_minor')
+                - (int) Transaction::where('user_id', $entry->user_id)
+                    ->whereNull('cancelled_at')->whereIn('type', ['depense', 'retrait'])->sum('amount_minor');
+            if ($availableForUser + $delta < 0) throw ValidationException::withMessages(['cancel' => 'Annulation impossible : les fonds de cet utilisateur ont déjà été utilisés.']);
             $entry->update(['cancelled_at' => now(), 'cancelled_by' => $user->id, 'cancellation_reason' => $reason]);
             $account->update(['balance_minor' => $account->balance_minor + $delta]);
         }, 3);

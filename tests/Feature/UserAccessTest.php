@@ -156,28 +156,39 @@ class UserAccessTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_user_sees_another_users_operation_and_creator_name(): void
+    public function test_user_sees_only_own_operations_and_cannot_download_another_users_receipt(): void
     {
         $creator = $this->user(['name' => 'Aïcha Koné']);
         $viewer = $this->user(['name' => 'Moussa Traoré']);
-        app(CashLedger::class)->record([
+        $sharedOperation = app(CashLedger::class)->record([
             'request_key' => (string) Str::uuid(), 'type' => 'approvisionnement', 'amount' => '25000',
             'description' => 'Paiement du client partagé', 'payment_method' => 'especes',
             'occurred_on' => today()->toDateString(),
         ], $creator);
+        app(CashLedger::class)->record([
+            'request_key' => (string) Str::uuid(), 'type' => 'approvisionnement', 'amount' => '50',
+            'description' => 'Paiement Moussa privé', 'payment_method' => 'especes',
+            'occurred_on' => today()->toDateString(),
+        ], $viewer);
 
         $this->actingAs($viewer)->get(route('history.index'))
             ->assertOk()
-            ->assertSee('Paiement du client partagé')
-            ->assertSee('Créée par Aïcha Koné')
-            ->assertSee('Historique commun des opérations');
+            ->assertDontSee('Paiement du client partagé')
+            ->assertDontSee('Créée par Aïcha Koné')
+            ->assertSee('Paiement Moussa privé')
+            ->assertSee('Historique de mes opérations');
+        $this->actingAs($viewer)->get(route('entries.index'))
+            ->assertOk()
+            ->assertDontSee('Paiement du client partagé')
+            ->assertSee('Paiement Moussa privé');
+        $this->actingAs($viewer)->get(route('transactions.receipt', $sharedOperation))->assertForbidden();
 
         $this->actingAs($viewer)->get('/')
             ->assertOk()
             ->assertSee('MES INDICATEURS DE CAISSE')
             ->assertSee('Solde de mes opérations')
             ->assertDontSee('Paiement du client partagé')
-            ->assertSee('<div class="stat-value">0,00', false);
+            ->assertSee('<div class="stat-value">50,00', false);
     }
 
     public function test_each_employee_has_personal_metrics_while_admin_has_global_metrics(): void
@@ -207,10 +218,11 @@ class UserAccessTest extends TestCase
 
         $this->actingAs($moussa)->get(route('history.index'))
             ->assertOk()
-            ->assertSee('Apport Aïcha')
-            ->assertSee('Créée par Aïcha Koné')
+            ->assertDontSee('Apport Aïcha')
+            ->assertDontSee('Créée par Aïcha Koné')
             ->assertSee('Apport Moussa')
-            ->assertSee('Créée par Moussa Traoré');
+            ->assertSee('Créée par Moussa Traoré')
+            ->assertSee('Historique de mes opérations');
 
         $this->actingAs($admin)->get('/')
             ->assertOk()
@@ -219,6 +231,12 @@ class UserAccessTest extends TestCase
             ->assertSee('<div class="stat-value">320,00', false)
             ->assertSee('Votre solde personnel disponible : <strong>0,00 XOF</strong>', false)
             ->assertSee('Le solde global affiché sur le tableau de bord appartient à l’ensemble des utilisateurs.');
+
+        $this->actingAs($admin)->get(route('history.index'))
+            ->assertOk()
+            ->assertSee('Apport Aïcha')
+            ->assertSee('Apport Moussa')
+            ->assertSee('Historique global des opérations');
     }
 
     public function test_admin_can_view_and_block_user_without_delete_action(): void
